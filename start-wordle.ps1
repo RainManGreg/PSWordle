@@ -1,6 +1,8 @@
 [CmdletBinding()]
     param(
+        [ValidateScript({$_ -gt 0})] #Can't have fewer than 1 round in the game
         [int]$AllowedRounds = 6,
+
         [ValidateSet("Black",
             "DarkBlue",
             "DarkGreen",
@@ -19,6 +21,7 @@
             "White"
         )]
         [string]$LetterInCorrectSpotColor = "green",
+
         [ValidateSet("Black",
             "DarkBlue",
             "DarkGreen",
@@ -37,6 +40,7 @@
             "White"
         )]
         [string]$LetterInWrongSpotColor = "yellow",
+
         [ValidateSet("Black",
             "DarkBlue",
             "DarkGreen",
@@ -78,7 +82,7 @@ A random word from the dictionary
 #>
 	[CmdletBinding()]
     param(
-        [int] $Seed
+        [int]$Seed
 	)
 
     $Dictionary = Get-Dictionary
@@ -501,7 +505,7 @@ List of unguessed letters
 #Initialize game - get word
 $GameType = Get-GameType 
 if ($GameType -eq "random"){
-    $WordToGuess = Get-WordToGuess e
+    $WordToGuess = Get-WordToGuess
 }
 elseif ($GameType -eq "seed"){
     $seed = Get-Seed
