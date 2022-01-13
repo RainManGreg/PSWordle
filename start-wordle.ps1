@@ -197,16 +197,6 @@ function Test-Guess {
         }
     }
 
-    function Write-GameInstructions {
-        clear-host
-        Write-host "Welcome to Wordle!"
-        Write-host "Guess the five letter word in $ALLOWEDROUNDS rounds to win."
-        Write-host -NoNewLine "`nCorrect letters in the correct position will be "; write-host -foregroundcolor green "green"
-        Write-host -NoNewLine "Correct letters in an incorrect position will be "; write-host -foregroundcolor yellow "yellow"
-        Write-host -NoNewLine "Letters that do not appear in the word will be "; write-host -foregroundcolor gray "gray"
-        Write-host "`nGood luck!`n"
-    }
-
     #verbose output
     if ($GuessObjectArray){
         Write-Verbose "Remaining Letters in guess:"
@@ -283,6 +273,15 @@ function Test-Guess {
     $ResultObjectArray | Sort-Object Position
 }
 
+function Write-GameInstructions {
+    clear-host
+    Write-host "Welcome to Wordle!"
+    Write-host "Guess the five letter word in $ALLOWEDROUNDS rounds to win."
+    Write-host -NoNewLine "`nCorrect letters in the correct position will be "; write-host -foregroundcolor green "green"
+    Write-host -NoNewLine "Correct letters in an incorrect position will be "; write-host -foregroundcolor yellow "yellow"
+    Write-host -NoNewLine "Letters that do not appear in the word will be "; write-host -foregroundcolor gray "gray"
+    Write-host "`nGood luck!`n"
+}
 function Write-FormattedWord {
     [CmdletBinding()]
     Param (
