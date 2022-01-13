@@ -1,8 +1,13 @@
 # PSWordle
-## Wordle in PowerShell. 
+## Wordle in PowerShell
+### Launching Wordle
 Launch by downloading the code, opening PowerShell to the directory it is in, and running:
 `Start-Wordle`
-This will launch a game with a random word to guess.
+This will launch a game with a random word to guess and six attempts to do so.
 
-Alternatively, the randomized word to guess can be seeded with an integer so multiple people can play the same game. For example, to do this with a seed of 100, run: 
-`Start-Wordle -Seed 100` 
+Alternatively, you can set the number of rounds. To change it to 4 rounds, for example, run: 
+`Start-Wordle -ALLOWEDROUNDS 4` 
+
+### Seeding the random word
+When Wordle starts you are prompted to run a fully random game or to seed the game with an integer. Using a common seed would allow multiple people to play the same game.
+
