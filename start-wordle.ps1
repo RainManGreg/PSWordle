@@ -1,13 +1,81 @@
 [CmdletBinding()]
     param(
-        [int]$ALLOWEDROUNDS = 6
+        [int]$AllowedRounds = 6,
+        [ValidateSet("Black",
+            "DarkBlue",
+            "DarkGreen",
+            "DarkCyan",
+            "DarkRed",
+            "DarkMagenta",
+            "DarkYellow",
+            "Gray",
+            "DarkGray",
+            "Blue",
+            "Green",
+            "Cyan",
+            "Red",
+            "Magenta",
+            "Yellow",
+            "White"
+        )]
+        [string]$LetterInCorrectSpotColor = "green",
+        [ValidateSet("Black",
+            "DarkBlue",
+            "DarkGreen",
+            "DarkCyan",
+            "DarkRed",
+            "DarkMagenta",
+            "DarkYellow",
+            "Gray",
+            "DarkGray",
+            "Blue",
+            "Green",
+            "Cyan",
+            "Red",
+            "Magenta",
+            "Yellow",
+            "White"
+        )]
+        [string]$LetterInWrongSpotColor = "yellow",
+        [ValidateSet("Black",
+            "DarkBlue",
+            "DarkGreen",
+            "DarkCyan",
+            "DarkRed",
+            "DarkMagenta",
+            "DarkYellow",
+            "Gray",
+            "DarkGray",
+            "Blue",
+            "Green",
+            "Cyan",
+            "Red",
+            "Magenta",
+            "Yellow",
+            "White"
+        )]
+        [string]$LetterNotInWordColor = "gray"
     )
 
 function Get-Dictionary {
+<#
+.DESCRIPTION
+Retrieves a dictionary of 5 letter words.
+
+.OUTPUTS
+An array of all 5 letter words in the dictionary
+#>
     (invoke-webrequest -URI https://raw.githubusercontent.com/charlesreid1/five-letter-words/master/sgb-words.txt).content.split("`n") | where-object {$_ -ne ""}
 }
 
 function Get-WordToGuess {
+<#
+.DESCRIPTION
+Retrieves a random word from the dictionary (using Get-Dictionary). Optional 'Seed' parameter can be passed to seed the randomizer.
+
+.OUTPUTS
+A random word from the dictionary
+#>
 	[CmdletBinding()]
     param(
         [int] $Seed
@@ -26,6 +94,13 @@ function Get-WordToGuess {
 }
 
 function Test-GuessIsWord {
+<#
+.DESCRIPTION
+Validates that a guess is in the dictionary
+
+.OUTPUTS
+$True if the guess is in the dictionary - $False otherwise
+#>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$True)]
@@ -37,6 +112,13 @@ function Test-GuessIsWord {
 }
 
 function Test-GuessLength {
+<#
+.DESCRIPTION
+Validates that the guess is 5 letters long.
+
+.OUTPUTS
+$True if the guess is 5 letters long - $False otherwise
+#>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$True)]
@@ -47,6 +129,13 @@ function Test-GuessLength {
 }
 
 function Get-Guess {
+<#
+.DESCRIPTION
+Retrieves a valid 5 letter guess from the player. Runs tests to validate the guess.
+
+.OUTPUTS
+A valid 5 letter guess from the player
+#>
     [CmdletBinding()]
     param()
     do{
@@ -66,6 +155,13 @@ function Get-Guess {
 }
 
 function Get-Seed {
+<#
+.DESCRIPTION
+Gets an integer from the player to be used as the randomizer seed.
+
+.OUTPUTS
+An integer to be used as the randomizer seed
+#>
     [CmdletBinding()]
     param ()
     do{ 
@@ -83,6 +179,13 @@ function Get-Seed {
 }
 
 function Get-GameType {
+<#
+.DESCRIPTION
+Asks the player whether to do a fully random word to guess or to seed the randomizer. 
+
+.OUTPUTS
+"random" for a fully random word to guess - "seed" for a game with a seeded randomizer
+#>
     [CmdletBinding()]
     param()
     do{ 
@@ -108,8 +211,14 @@ function Get-GameType {
 }
 
 function Test-CorrectPlacement {
-    #returns true if letter is in the correct position in the word, or if letter is in the word and the 'contains' switch is used
-    param(
+<#
+.DESCRIPTION
+Tests whether a letter is in the provided $Word object. By default looks for exact matches. "Contains" switch can be used to look for the letter anywhere in the word.
+
+.OUTPUTS
+$True or $False
+#>
+param(
         [Parameter(Mandatory=$True)]
         [char]$Letter,
         [Parameter(Mandatory=$True)]
@@ -128,6 +237,13 @@ function Test-CorrectPlacement {
 }
 
 function New-LetterObjectArray {
+<#
+.DESCRIPTION
+Creates an array of custom objects representing letters in a word. Properties are "Letter": the letter, and "Position": position in the word (0-5)
+
+.OUTPUTS
+An array of custom objects representing letters in a word
+#>
     param(
         [Parameter(Mandatory=$True)]
         [string]$Word
@@ -144,6 +260,13 @@ function New-LetterObjectArray {
 }
 
 function Write-VerboseResults {
+<#
+.DESCRIPTION
+Writes verbose output to troubleshoot game logic if "verbose" flag is used
+
+.OUTPUTS
+Verbose output
+#>
     [CmdletBinding()]
     Param (
         [PSCustomObject]$Word
@@ -160,6 +283,18 @@ function Write-VerboseResults {
     }
 }
 function Test-Guess {
+<#
+.DESCRIPTION
+Takes a provided guess and checks it against the provided word. Both are strings. Returns array of custom objects representing the results of the check.
+Attributes of the custom objects are:
+"Letter" : the letter that was guessed
+"Position" : the position of the letter in the word (0-5)
+"FoundExact" : $True if the letter and position match the word to guess. $False otherwise.
+"FoundContains" : $True if the letter is in the word to guess but the position is incorrect. $False otherwise
+
+.OUTPUTS
+An array of custom objects describing the results of the guess
+#>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$True)]
@@ -172,15 +307,15 @@ function Test-Guess {
     $WordObjectArray = New-LetterObjectArray -word $Word
     $ResultObjectArray = @()
 
-    #Start with exact matches
+    #Start with searching for exact matches
     foreach ($letter in $GuessObjectArray){
         if (Test-CorrectPlacement -Letter $letter.Letter -Position $letter.Position -Word $WordObjectArray){
             #add found letter to result object array
             $properties = @{
                 'Letter' = $letter.Letter;
                 'Position' = $letter.Position;
-                'FoundExact' = $True;
-                'FoundContains' = $False;
+                'FoundExact' = $True; #indicates that the letter and position were correct
+                'FoundContains' = $False; #the letter and position were correct, so this is $False
             }
             Write-Verbose "Exact match on [$($letter.letter)] in position [$($letter.position)]"
             $ResultObjectArray += New-Object -TypeName PSObject -Prop $properties
@@ -211,15 +346,15 @@ function Test-Guess {
         Write-VerboseResults -Word $ResultObjectArray -verbose:$VerbosePreference
     }
     
-    #After exact matches look for correct letters in the wrong spot from the remaining letters
+    #After exact match lookup, look for correct letters in the wrong spot from the remaining letters
     foreach ($letter in $GuessObjectArray){
         if (Test-CorrectPlacement -Letter $letter.Letter -Position $letter.Position -Word $WordObjectArray -Contains){
             #add found letter to result object array
             $properties = @{
                 'Letter' = $letter.Letter;
                 'Position' = $letter.Position;
-                'FoundExact' = $False;
-                'FoundContains' = $True;
+                'FoundExact' = $False; #indicates that the letter and position were incorrect
+                'FoundContains' = $True; #indicates that the letter is in the word but the position was incorrect
             }
             Write-Verbose "Contains match on [$($letter.letter)] in position [$($letter.position)]"
             $ResultObjectArray += New-Object -TypeName PSObject -Prop $properties
@@ -250,15 +385,15 @@ function Test-Guess {
         Write-VerboseResults -Word $ResultObjectArray -verbose:$VerbosePreference
     }
 
-    #After match searches add remaining letters from guess to results array (showing they're not found)
+    #After match searches add the remaining letters from the guess to results array (indicating that they're not found)
     foreach ($letter in $GuessObjectArray){
     
         #add found letter to result object array
         $properties = @{
             'Letter' = $letter.Letter;
             'Position' = $letter.Position;
-            'FoundExact' = $False;
-            'FoundContains' = $False;
+            'FoundExact' = $False; #indicates that the letter and position were incorrect
+            'FoundContains' = $False; #indicates that the letter is not found in the word
         }
         Write-Verbose "No match found for [$($letter.letter)] in position [$($letter.position)]"
         $ResultObjectArray += New-Object -TypeName PSObject -Prop $properties
@@ -269,20 +404,37 @@ function Test-Guess {
         Write-Verbose "Letters found after test-guess:"
         Write-VerboseResults -Word $ResultObjectArray -verbose:$VerbosePreference
     }
-    #Return results of guess
+
+    #Return results of the guess and put the letters in the correct order
     $ResultObjectArray | Sort-Object Position
 }
 
 function Write-GameInstructions {
+<#
+.DESCRIPTION
+Writes the instructions for the game to the console
+
+.OUTPUTS
+Instructions for the game written to console
+#>
     clear-host
     Write-host "Welcome to Wordle!"
     Write-host "Guess the five letter word in $ALLOWEDROUNDS rounds to win."
-    Write-host -NoNewLine "`nCorrect letters in the correct position will be "; write-host -foregroundcolor green "green"
-    Write-host -NoNewLine "Correct letters in an incorrect position will be "; write-host -foregroundcolor yellow "yellow"
-    Write-host -NoNewLine "Letters that do not appear in the word will be "; write-host -foregroundcolor gray "gray"
+    Write-host -NoNewLine "`nCorrect letters in the correct position will be "; write-host -foregroundcolor $LetterInCorrectSpotColor "$LetterInCorrectSpotColor"
+    Write-host -NoNewLine "Correct letters in an incorrect position will be "; write-host -foregroundcolor $LetterInWrongSpotColor "$LetterInWrongSpotColor"
+    Write-host -NoNewLine "Letters that do not appear in the word will be "; write-host -foregroundcolor $LetterNotInWordColor "$LetterNotInWordColor"
     Write-host "`nGood luck!`n"
 }
 function Write-FormattedWord {
+<#
+.DESCRIPTION
+Writes the word out to the console using the green/yellow/gray colors indicating the guess results. "Word" input is the array returned by "Test-Guess." 
+Optional "Hidden" switch shows the colors but hides the letters (shown at the end of the game)
+
+.OUTPUTS
+Word to the console in colors indicating guess results
+#>
+
     [CmdletBinding()]
     Param (
         [PSCustomObject]$Word,
@@ -297,21 +449,21 @@ function Write-FormattedWord {
         if ($Letter.FoundExact){
             $properties = @{
                 'Letter' = $LetterChar;
-                'Color' = "green";
+                'Color' = $LetterInCorrectSpotColor;
             }
             $OutputLetterArray += New-Object -TypeName PSObject -Prop $properties
         }
         elseif ($Letter.FoundContains){
             $properties = @{
                 'Letter' = $LetterChar;
-                'Color' = "yellow";
+                'Color' = $LetterInWrongSpotColor;
             }
             $OutputLetterArray += New-Object -TypeName PSObject -Prop $properties
         }
         else {
             $properties = @{
                 'Letter' = $LetterChar;
-                'Color' = "gray";
+                'Color' = $LetterNotInWordColor;
             }
             $OutputLetterArray += New-Object -TypeName PSObject -Prop $properties
         }
@@ -320,6 +472,12 @@ function Write-FormattedWord {
 }
 
 function Write-LettersLists {
+<#
+.DESCRIPTION
+Writes the list of unguessed letters to aid in the player's next guess. Letters calculated from array of results returned by each subsequent "test-guess"
+.OUTPUTS
+List of unguessed letters
+#>
     [CmdletBinding()]
     Param (
         [PSCustomObject[]]$WordsArray
@@ -350,25 +508,29 @@ elseif ($GameType -eq "seed"){
 $CurrentRound = 0
 $WonGame = $False
 $resultsArray = @()
+
 Write-GameInstructions
 while (($CurrentRound -lt $ALLOWEDROUNDS) -and (-not($WonGame))){
     $CurrentRound += 1
-    if ($CurrentRound -eq $ALLOWEDROUNDS){
+    if ($CurrentRound -eq $ALLOWEDROUNDS){ #last round is over so the game is over one way or the other
         $GameOver = $True
     }
     $guess = Get-Guess -verbose:$VerbosePreference
     clear-host
+
     $result = Test-Guess -Guess $guess -Word $WordToGuess -verbose:$VerbosePreference
-    $resultsArray += @(,$result)
-    foreach ($round in $resultsArray){
+    $resultsArray += @(,$result) #keep track of all the guesses in an array of arrays
+
+    foreach ($round in $resultsArray){ #write out all the guesses so far
         Write-FormattedWord -word $round
     }
-    if ((($result | select-object -uniq FoundExact).FoundExact.count -eq 1) -and (($result | select-object -uniq FoundExact).FoundExact[0])){
+
+    if ((($result | select-object -uniq FoundExact).FoundExact.count -eq 1) -and (($result | select-object -uniq FoundExact).FoundExact[0])){ #if every letter is in the exact right position the player won
         $WonGame = $True
         $GameOver = $True
         Write-Host "`nYou win! Yay!`n"
     }
-    If(-Not($GameOver)){ #show letter list only if game isn't over
+    If(-Not($GameOver)){ #show unguessed letter list only if game isn't over
         Write-LettersLists -WordsArray $resultsArray
     }
 }
@@ -376,7 +538,7 @@ if (-not($WonGame)){
     Write-Host "`nYou lose. Shoot. The word was [$WordToGuess]`n"
 }
 
-#Show Final Results
+#Display Final Results
 if ($Seed){
     Write-host "Wordle $seed $CurrentRound/$ALLOWEDROUNDS"
 }
