@@ -1,7 +1,7 @@
 # PSWordle
 ## Wordle in PowerShell
 ### Launching Wordle
-First, download the start-wordle.ps1 file and open PowerShell to the directory it is downloaded to. One way to open PowerShell to the directory the script is in is to navigate to that folder in Windows Explorer then type PowerShell into the address bar and press 'Enter.'
+First, download the `start-wordle.ps1` file and open PowerShell to the directory it is downloaded to. One way to open PowerShell to the directory the script is in is to navigate to that folder in Windows Explorer, type `PowerShell` into the address bar, and press 'Enter.'
 
 Once you are in the correct directory run the following PowerShell command:
 
