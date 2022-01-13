@@ -17,7 +17,7 @@ This will launch a game with a random word to guess and six attempts to do so.
 
 Each round you see the results of your previous guesses in the colors of the letters, as well as a list of letters you've already guessed, to help you determine your next guess.
 
-![A round of Wordle](/assets/images/Wordle.png)
+![A round of Wordle](/assets/images/WordleGuess.png)
 
 ### Winning the Wordle Game
 
