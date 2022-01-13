@@ -1,5 +1,7 @@
 # PSWordle
 ## Wordle in PowerShell
+Wordle is a word guessing game popularized from https://www.powerlanguage.co.uk/wordle. This is a PowerShell version of the same game.
+
 ### Launching Wordle
 First, download the `start-wordle.ps1` file and open PowerShell to the directory it is downloaded to. One way to open PowerShell to the directory the script is in is to navigate to that folder in Windows Explorer, type `PowerShell` into the address bar, and press 'Enter.'
 
