@@ -335,15 +335,15 @@ An array of custom objects describing the results of the guess
     #verbose output
     if ($GuessObjectArray){
         Write-Verbose "Remaining Letters in guess:"
-        Write-VerboseResults -Word $GuessObjectArray -verbose:$VerbosePreference
+        Write-VerboseResults -Word $GuessObjectArray 
     }
     if ($WordObjectArray){
         Write-Verbose "Remaining Letters in word to guess:"
-        Write-VerboseResults -Word $WordObjectArray -verbose:$VerbosePreference
+        Write-VerboseResults -Word $WordObjectArray 
     }
     if ($ResultObjectArray){
         Write-Verbose "Letters found after exact match search:"
-        Write-VerboseResults -Word $ResultObjectArray -verbose:$VerbosePreference
+        Write-VerboseResults -Word $ResultObjectArray 
     }
     
     #After exact match lookup, look for correct letters in the wrong spot from the remaining letters
@@ -374,15 +374,15 @@ An array of custom objects describing the results of the guess
     #verbose output
     if ($GuessObjectArray){
         Write-Verbose "Remaining Letters in guess:"
-        Write-VerboseResults -Word $GuessObjectArray -verbose:$VerbosePreference
+        Write-VerboseResults -Word $GuessObjectArray 
     }
     if ($WordObjectArray){
         Write-Verbose "Remaining Letters in word to guess:"
-        Write-VerboseResults -Word $WordObjectArray -verbose:$VerbosePreference
+        Write-VerboseResults -Word $WordObjectArray 
     }
     if ($ResultObjectArray){
         Write-Verbose "Letters found after contains search:"
-        Write-VerboseResults -Word $ResultObjectArray -verbose:$VerbosePreference
+        Write-VerboseResults -Word $ResultObjectArray 
     }
 
     #After match searches add the remaining letters from the guess to results array (indicating that they're not found)
@@ -402,7 +402,7 @@ An array of custom objects describing the results of the guess
     #verbose output
     if ($ResultObjectArray){
         Write-Verbose "Letters found after test-guess:"
-        Write-VerboseResults -Word $ResultObjectArray -verbose:$VerbosePreference
+        Write-VerboseResults -Word $ResultObjectArray 
     }
 
     #Return results of the guess and put the letters in the correct order
@@ -468,7 +468,11 @@ Word to the console in colors indicating guess results
             $OutputLetterArray += New-Object -TypeName PSObject -Prop $properties
         }
     }
-    write-host "$($OutputLetterArray[0].Letter) " -NoNewLine -foregroundcolor $OutputLetterArray[0].color; write-host "$($OutputLetterArray[1].Letter) " -NoNewLine -foregroundcolor $($OutputLetterArray[1].color); write-host "$($OutputLetterArray[2].Letter) " -NoNewLine -foregroundcolor $($OutputLetterArray[2].color); write-host "$($OutputLetterArray[3].Letter) " -NoNewLine -foregroundcolor $($OutputLetterArray[3].color); write-host "$($OutputLetterArray[4].Letter)" -foregroundcolor $($OutputLetterArray[4].color)  
+    write-host "$($OutputLetterArray[0].Letter) " -NoNewLine -foregroundcolor $OutputLetterArray[0].color; `
+    write-host "$($OutputLetterArray[1].Letter) " -NoNewLine -foregroundcolor $($OutputLetterArray[1].color); `
+    write-host "$($OutputLetterArray[2].Letter) " -NoNewLine -foregroundcolor $($OutputLetterArray[2].color); `
+    write-host "$($OutputLetterArray[3].Letter) " -NoNewLine -foregroundcolor $($OutputLetterArray[3].color); `
+    write-host "$($OutputLetterArray[4].Letter)" -foregroundcolor $($OutputLetterArray[4].color)  
 }
 
 function Write-LettersLists {
@@ -495,13 +499,13 @@ List of unguessed letters
 }
 
 #Initialize game - get word
-$GameType = Get-GameType -verbose:$VerbosePreference
+$GameType = Get-GameType 
 if ($GameType -eq "random"){
-    $WordToGuess = Get-WordToGuess -verbose:$VerbosePreference
+    $WordToGuess = Get-WordToGuess e
 }
 elseif ($GameType -eq "seed"){
     $seed = Get-Seed
-    $WordToGuess = Get-WordToGuess -Seed $seed -verbose:$VerbosePreference
+    $WordToGuess = Get-WordToGuess -Seed $seed 
 }
 
 #start playing the game
@@ -515,10 +519,10 @@ while (($CurrentRound -lt $ALLOWEDROUNDS) -and (-not($WonGame))){
     if ($CurrentRound -eq $ALLOWEDROUNDS){ #last round is over so the game is over one way or the other
         $GameOver = $True
     }
-    $guess = Get-Guess -verbose:$VerbosePreference
+    $guess = Get-Guess 
     clear-host
 
-    $result = Test-Guess -Guess $guess -Word $WordToGuess -verbose:$VerbosePreference
+    $result = Test-Guess -Guess $guess -Word $WordToGuess 
     $resultsArray += @(,$result) #keep track of all the guesses in an array of arrays
 
     foreach ($round in $resultsArray){ #write out all the guesses so far
