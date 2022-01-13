@@ -23,3 +23,11 @@ You can change the number of guesses you get before losing the game. To change i
 By default, the letters are green if they are correct, yellow if they're in the wrong position, and gray if they do not appear in the word. For accessibility these colors can be changed. Example:
 
 `.\Start-Wordle.ps1 -LetterInCorrectSpotColor blue -LetterInWrongSpotColor yellow -LetterNotInWordColor red`
+
+## Troubleshooting
+
+If you get an error that start-wordle.ps1 is not digitally signed you may need to change your PowerShell execution policy first:
+
+`Set-ExecutionPolicy Bypass -Scope CurrentUser`
+
+Be careful when running any unsigned code though!
