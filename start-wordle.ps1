@@ -376,3 +376,4 @@ else {
 foreach ($round in $resultsArray){
     Write-FormattedWord -word $round -Hidden
 }
+$host.ui.RawUI.ReadKey("NoEcho,IncludeKeyDown") | out-null
