@@ -197,6 +197,16 @@ function Test-Guess {
         }
     }
 
+    function Write-GameInstructions {
+        clear-host
+        Write-host "Welcome to Wordle!"
+        Write-host "Guess the five letter word in $ALLOWEDROUNDS rounds to win."
+        Write-host -NoNewLine "`nCorrect letters in the correct position will be "; write-host -foregroundcolor green "green"
+        Write-host -NoNewLine "Correct letters in an incorrect position will be "; write-host -foregroundcolor yellow "yellow"
+        Write-host -NoNewLine "Letters that do not appear in the word will be "; write-host -foregroundcolor gray "gray"
+        Write-host "`nGood luck!`n"
+    }
+
     #verbose output
     if ($GuessObjectArray){
         Write-Verbose "Remaining Letters in guess:"
@@ -341,6 +351,7 @@ elseif ($GameType -eq "seed"){
 $CurrentRound = 0
 $WonGame = $False
 $resultsArray = @()
+Write-GameInstructions
 while (($CurrentRound -lt $ALLOWEDROUNDS) -and (-not($WonGame))){
     $CurrentRound += 1
     if ($CurrentRound -eq $ALLOWEDROUNDS){
@@ -363,7 +374,7 @@ while (($CurrentRound -lt $ALLOWEDROUNDS) -and (-not($WonGame))){
     }
 }
 if (-not($WonGame)){
-    Write-Host "`nYou lose. Shoot.`n"
+    Write-Host "`nYou lose. Shoot. The word was [$WordToGuess]`n"
 }
 
 #Show Final Results
