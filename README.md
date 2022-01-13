@@ -9,6 +9,7 @@ Once you are in the correct directory run the following PowerShell command:
 
 This will launch a game with a random word to guess and six attempts to do so.
 
+### Changing the number of guesses
 You can change the number of guesses you get before losing the game. To change it to 4 rounds of guesses, for example, run: 
 
 `.\Start-Wordle.ps1 -ALLOWEDROUNDS 4` 
