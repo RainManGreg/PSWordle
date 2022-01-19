@@ -497,16 +497,10 @@ function Write-LettersLists {
         #$usedLetters += $word | select-object -expandproperty letter
         foreach ($Letter in $Word){
             $LetterChar = $Letter.letter
-            if ($Letter.FoundExact){
+            if ($Letter.FoundExact -or $Letter.FoundContains){
                 $properties = @{
                     'Letter' = $LetterChar;
                     'Color' = $LetterInCorrectSpotColor;
-                }
-            }
-            elseif ($Letter.FoundContains){
-                $properties = @{
-                    'Letter' = $LetterChar;
-                    'Color' = $LetterInWrongSpotColor;
                 }
             }
             else {
