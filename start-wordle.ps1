@@ -536,7 +536,8 @@ function Write-LettersLists {
 #Initialize game - get word
 $GameType = Get-GameType 
 if ($GameType -eq "random"){
-    $WordToGuess = Get-WordToGuess
+    $seed = get-random 
+    $WordToGuess = Get-WordToGuess -seed $seed
 }
 elseif ($GameType -eq "seed"){
     $seed = Get-Seed
@@ -559,7 +560,7 @@ while (($CurrentRound -lt $ALLOWEDROUNDS) -and (-not($WonGame))){
 
     $result = Test-Guess -Guess $guess -Word $WordToGuess 
     $resultsArray += @(,$result) #keep track of all the guesses in an array of arrays
-
+    write-host "Round $CurrentRound/$ALLOWEDROUNDS"
     foreach ($round in $resultsArray){ #write out all the guesses so far
         Write-FormattedWord -word $round
     }
