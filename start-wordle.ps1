@@ -69,7 +69,7 @@ Retrieves a dictionary of 5 letter words.
 .OUTPUTS
 An array of all 5 letter words in the dictionary
 #>
-    (invoke-webrequest -URI https://raw.githubusercontent.com/charlesreid1/five-letter-words/master/sgb-words.txt).content.split("`n") | where-object {$_ -ne ""}
+    (invoke-webrequest -Uri https://gist.githubusercontent.com/cfreshman/a03ef2cba789d8cf00c08f767e0fad7b/raw/a9e55d7e0c08100ce62133a1fa0d9c4f0f542f2c/wordle-answers-alphabetical.txt).content.split("`n")
 }
 
 function Get-WordToGuess {
