@@ -1,5 +1,6 @@
 [CmdletBinding()]
     param(
+        [switch]$HardMode,
         [ValidateScript({$_ -gt 0})] #Can't have fewer than 1 round in the game
         [int]$AllowedRounds = 6,
 
@@ -62,6 +63,10 @@
     )
 
 function Get-Dictionary {
+    [CmdletBinding()]
+    param(
+        [switch]$HardMode
+	)
 <#
 .DESCRIPTION
 Retrieves a dictionary of 5 letter words.
@@ -69,7 +74,12 @@ Retrieves a dictionary of 5 letter words.
 .OUTPUTS
 An array of all 5 letter words in the dictionary
 #>
-    (invoke-webrequest -Uri https://gist.githubusercontent.com/cfreshman/a03ef2cba789d8cf00c08f767e0fad7b/raw/a9e55d7e0c08100ce62133a1fa0d9c4f0f542f2c/wordle-answers-alphabetical.txt).content.split("`n")
+    if ($HardMode){
+        (invoke-webrequest -URI https://raw.githubusercontent.com/charlesreid1/five-letter-words/master/sgb-words.txt).content.split("`n") | where-object {$_ -ne ""}
+    }
+    else{
+        (invoke-webrequest -Uri https://gist.githubusercontent.com/cfreshman/a03ef2cba789d8cf00c08f767e0fad7b/raw/a9e55d7e0c08100ce62133a1fa0d9c4f0f542f2c/wordle-answers-alphabetical.txt).content.split("`n")
+    }
 }
 
 function Get-WordToGuess {
@@ -80,12 +90,13 @@ Retrieves a random word from the dictionary (using Get-Dictionary). Optional 'Se
 .OUTPUTS
 A random word from the dictionary
 #>
-	[CmdletBinding()]
+    [CmdletBinding()]
     param(
-        [int]$Seed
+        [int]$Seed,
+        [switch]$HardMode
 	)
 
-    $Dictionary = Get-Dictionary
+    $Dictionary = Get-Dictionary -HardMode:$HardMode
     if ($PSBoundParameters.ContainsKey('Seed')){
         
         $ResultWord = $Dictionary | get-random -SetSeed $Seed
@@ -108,10 +119,11 @@ $True if the guess is in the dictionary - $False otherwise
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$True)]
-        [string]$Guess
+        [string]$Guess,
+        [switch]$HardMode
     )
-    $inDictionary = $guess -in (Get-Dictionary)
-    write-verbose "Guess is in dictionary: $inDictionary"
+    $inDictionary = $guess -in (Get-Dictionary -HardMode)
+    write-verbose "Guess is in dictionary: $inDictionary. HardMode value $HardMode"
     $inDictionary
 }
 
@@ -141,18 +153,20 @@ Retrieves a valid 5 letter guess from the player. Runs tests to validate the gue
 A valid 5 letter guess from the player
 #>
     [CmdletBinding()]
-    param()
+    param(
+        [switch]$HardMode
+    )
     do{
         $guess = $NULL
         $guess = Read-Host "`nPlease enter your 5 letter guess: "
         if (-Not(Test-GuessLength -Guess $guess)){
             write-host "Invalid word length. Word must be 5 letters."
         }
-        elseif (-Not(Test-GuessIsWord -Guess $guess)){
+        elseif (-Not(Test-GuessIsWord -Guess $guess -HardMode)){
             write-host "Invalid word. Please enter a valid word."
         }
         
-    } until (((Test-GuessIsWord -Guess $guess) -eq $True) -and ((Test-GuessLength -Guess $guess) -eq $True))
+    } until (((Test-GuessIsWord -Guess $guess -HardMode) -eq $True) -and ((Test-GuessLength -Guess $guess) -eq $True))
     $guess = $guess.toupper()
     write-verbose "Guessed word is [$guess]"
     $guess
@@ -534,14 +548,17 @@ function Write-LettersLists {
 }
 
 #Initialize game - get word
+if ($HardMode){
+    $HardModeText = "Hard Mode "
+}
 $GameType = Get-GameType 
 if ($GameType -eq "random"){
     $seed = get-random 
-    $WordToGuess = Get-WordToGuess -seed $seed
+    $WordToGuess = Get-WordToGuess -seed $seed -HardMode:$HardMode
 }
 elseif ($GameType -eq "seed"){
     $seed = Get-Seed
-    $WordToGuess = Get-WordToGuess -Seed $seed 
+    $WordToGuess = Get-WordToGuess -Seed $seed -HardMode:$HardMode
 }
 
 #start playing the game
@@ -555,7 +572,7 @@ while (($CurrentRound -lt $ALLOWEDROUNDS) -and (-not($WonGame))){
     if ($CurrentRound -eq $ALLOWEDROUNDS){ #last round is over so the game is over one way or the other
         $GameOver = $True
     }
-    $guess = Get-Guess 
+    $guess = Get-Guess -HardMode
     clear-host
 
     $result = Test-Guess -Guess $guess -Word $WordToGuess 
@@ -580,10 +597,10 @@ if (-not($WonGame)){
 
 #Display Final Results
 if ($Seed){
-    Write-host "Wordle $seed $CurrentRound/$ALLOWEDROUNDS"
+    Write-host "Wordle $HardModeText#$seed ($CurrentRound/$ALLOWEDROUNDS)"
 }
 else {
-    Write-host "Wordle $CurrentRound/$ALLOWEDROUNDS"
+    Write-host "Wordle $HardModeText($CurrentRound/$ALLOWEDROUNDS)"
 }
 foreach ($round in $resultsArray){
     Write-FormattedWord -word $round -Hidden
