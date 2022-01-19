@@ -58,7 +58,7 @@
             "Yellow",
             "White"
         )]
-        [string]$LetterNotInWordColor = "gray"
+        [string]$LetterNotInWordColor = "darkgray"
     )
 
 function Get-Dictionary {
@@ -447,30 +447,28 @@ Word to the console in colors indicating guess results
     $OutputLetterArray = @()
     foreach ($Letter in $Word){
         $LetterChar = $Letter.letter
-            if ($Hidden){
-                $LetterChar = [char]9632 #a box
-            }
+        if ($Hidden){
+            $LetterChar = [char]9632 #a box
+        }
         if ($Letter.FoundExact){
             $properties = @{
                 'Letter' = $LetterChar;
                 'Color' = $LetterInCorrectSpotColor;
             }
-            $OutputLetterArray += New-Object -TypeName PSObject -Prop $properties
         }
         elseif ($Letter.FoundContains){
             $properties = @{
                 'Letter' = $LetterChar;
                 'Color' = $LetterInWrongSpotColor;
             }
-            $OutputLetterArray += New-Object -TypeName PSObject -Prop $properties
         }
         else {
             $properties = @{
                 'Letter' = $LetterChar;
                 'Color' = $LetterNotInWordColor;
             }
-            $OutputLetterArray += New-Object -TypeName PSObject -Prop $properties
         }
+        $OutputLetterArray += New-Object -TypeName PSObject -Prop $properties
     }
     write-host "$($OutputLetterArray[0].Letter) " -NoNewLine -foregroundcolor $OutputLetterArray[0].color; `
     write-host "$($OutputLetterArray[1].Letter) " -NoNewLine -foregroundcolor $($OutputLetterArray[1].color); `
@@ -480,26 +478,65 @@ Word to the console in colors indicating guess results
 }
 
 function Write-LettersLists {
-<#
-.DESCRIPTION
-Writes the list of unguessed letters to aid in the player's next guess. Letters calculated from array of results returned by each subsequent "test-guess"
-.OUTPUTS
-List of unguessed letters
-#>
+    <#
+    .DESCRIPTION
+    Writes the keyboard layout showing letters in colors corresponding with the guesses thus far. Letters calculated from array of results returned by each subsequent "test-guess"
+    .OUTPUTS
+    Keyboard showing letters in the colors corresponding with their guess status
+    #>
     [CmdletBinding()]
     Param (
         [PSCustomObject[]]$WordsArray
     )
     $usedLetters = @()
-    $alphabet = [char[]](65..90)
+    $keyboardTopRow = @("Q","W","E","R","T","Y","U","I","O","P")
+    $keyboardMiddleRow = @("","A","S","D","F","G","H","J","K","L")
+    $keyboardBottomRow = @("  ","Z","X","C","V","B","N","M")
+    $keyboardLayout = @($keyboardTopRow, $keyboardMiddleRow, $keyboardBottomRow)
     foreach ($word in $WordsArray){
-        $usedLetters += $word | select-object -expandproperty letter
+        #$usedLetters += $word | select-object -expandproperty letter
+        foreach ($Letter in $Word){
+            $LetterChar = $Letter.letter
+            if ($Letter.FoundExact){
+                $properties = @{
+                    'Letter' = $LetterChar;
+                    'Color' = $LetterInCorrectSpotColor;
+                }
+            }
+            elseif ($Letter.FoundContains){
+                $properties = @{
+                    'Letter' = $LetterChar;
+                    'Color' = $LetterInWrongSpotColor;
+                }
+            }
+            else {
+                $properties = @{
+                    'Letter' = $LetterChar;
+                    'Color' = $LetterNotInWordColor;
+                }
+            }
+            $obj = New-Object -TypeName PSObject -Prop $properties
+            if (-not($obj.letter -in $UsedLetters.letter)){
+                $usedLetters += $obj
+            }
+        }
     }
-    $usedLetters = $usedLetters | select-object -uniq | sort-object
-    $unusedLetters = $alphabet | where-object {-not($_ -in $usedLetters)}
 
-    write-host "`nUnused Letters:"
-    $unusedLetters -join " "
+    #write output
+    write-host "`n    Keyboard:"
+    foreach ($row in $keyboardLayout){
+        foreach ($letter in $row){
+            if ($letter -in $usedLetters.letter){
+                $letterObj = $usedLetters | where-object {$_.letter -eq $letter} 
+                write-host "$($letterObj[0].Letter) " -NoNewLine -foregroundcolor $letterObj[0].color
+            }
+            else {
+                write-host "$letter " -NoNewLine 
+            }
+        }
+        write-host ""
+    }
+   # write-host "`n"
 }
 
 #Initialize game - get word
