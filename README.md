@@ -29,6 +29,11 @@ You win if you guess the word before the maximum number of guesses is reached. B
 ### Seeding the random word
 When Wordle starts you are prompted to run a fully random game or to seed the game with an integer. Using a common seed would allow multiple people to play the same game.
 
+### Hard Mode
+You can play Wordle with a dictionary with approximately twice as many words to make the game more difficult.
+
+`.\Start-Wordle.ps1 -HardMode`
+
 ### Changing the number of guesses
 You can change the number of guesses you get before losing the game. To change it to 4 rounds of guesses, for example, run: 
 
