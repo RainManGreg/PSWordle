@@ -91,58 +91,47 @@ Retrieves a dictionary of 5 letter words.
 .OUTPUTS
 An array of all 5 letter words in the dictionary
 #>
+    
     if ($HardMode){
-        #(invoke-webrequest -URI https://raw.githubusercontent.com/charlesreid1/five-letter-words/master/sgb-words.txt).content.split("`n") | where-object {$_ -ne ""}
-        $dictpath = join-path -Path $PSScriptRoot -ChildPath "assets" | join-path -ChildPath "dicts" | join-path -ChildPath "hardmode.txt"
-        if (test-path $dictpath){
-            get-content $dictpath -Encoding ascii
-        }
-        else {
-            $tempdict = (join-path -path $env:temp -ChildPath "hardmode.txt")
-            if (-not(test-path $tempdict)){
-                (invoke-webrequest -URI https://raw.githubusercontent.com/RainManGreg/PSWordle/main/assets/dicts/hardmode.txt).content | out-file $tempdict -Encoding ascii
-            }
-            get-content $tempdict -Encoding ascii
-        }
-    }
+        $filename = "hardmode.txt"
+        $url = "https://raw.githubusercontent.com/RainManGreg/PSWordle/main/assets/dicts/hardmode.txt"
+    }    
     else{
-        #(invoke-webrequest -Uri https://gist.githubusercontent.com/cfreshman/a03ef2cba789d8cf00c08f767e0fad7b/raw/a9e55d7e0c08100ce62133a1fa0d9c4f0f542f2c/wordle-answers-alphabetical.txt).content.split("`n")
-        $dictpath = join-path -Path $PSScriptRoot -ChildPath "assets" | join-path -ChildPath "dicts" | join-path -ChildPath "dict.txt"
-        if (test-path $dictpath){
-            get-content $dictpath -Encoding ascii
+        $filename = "dict.txt"
+        $url = "https://raw.githubusercontent.com/RainManGreg/PSWordle/main/assets/dicts/dict.txt"
+    }
+
+    $dictpath = join-path -Path $PSScriptRoot -ChildPath "assets" | join-path -ChildPath "dicts" | join-path -ChildPath $filename
+    if (test-path $dictpath){
+        get-content $dictpath -Encoding ascii | where-object {$_ -ne ""}
+    }
+    else {
+        $tempdict = (join-path -path $env:temp -ChildPath $filename)
+        if (-not(test-path $tempdict)){
+            (invoke-webrequest -URI $url).content | out-file $tempdict -Encoding ascii
         }
-        else {
-            $tempdict = (join-path -path $env:temp -ChildPath "dict.txt")
-            if (-not(test-path $tempdict)){
-                (invoke-webrequest -URI https://raw.githubusercontent.com/RainManGreg/PSWordle/main/assets/dicts/dict.txt).content | out-file $tempdict -Encoding ascii
-            }
-            get-content $tempdict -Encoding ascii
-        }
+        get-content $tempdict -Encoding ascii | where-object {$_ -ne ""}
     }
 }
 
 function Get-WordToGuess {
 <#
 .DESCRIPTION
-Retrieves a random word from the dictionary (using Get-Dictionary). Optional 'Seed' parameter can be passed to seed the randomizer.
+Retrieves a random word from the dictionary (using Get-Dictionary). 'Seed' parameter passed to seed the randomizer.
 
 .OUTPUTS
 A random word from the dictionary
 #>
     [CmdletBinding()]
     param(
+        [Parameter(Mandatory=$True)]    
         [int]$Seed,
         [switch]$HardMode
 	)
 
     $Dictionary = Get-Dictionary -HardMode:$HardMode
-    if ($PSBoundParameters.ContainsKey('Seed')){
-        
-        $ResultWord = $Dictionary | get-random -SetSeed $Seed
-    }
-    else {
-        $ResultWord = $Dictionary | get-random 
-    }
+    $ResultWord = $Dictionary | get-random -SetSeed $Seed
+    
     write-verbose "Word to guess is [$ResultWord]"
     $ResultWord
 }
@@ -209,62 +198,6 @@ A valid 5 letter guess from the player
     $guess = $guess.toupper()
     write-verbose "Guessed word is [$guess]"
     $guess
-}
-
-function Get-Seed {
-<#
-.DESCRIPTION
-Gets an integer from the player to be used as the randomizer seed.
-
-.OUTPUTS
-An integer to be used as the randomizer seed
-#>
-    [CmdletBinding()]
-    param ()
-    do{ 
-        try{
-            [int]$seed = Read-Host "Enter an integer seed" -ErrorAction SilentlyContinue
-            $ValidSeed = $True
-        }
-        catch {
-            Write-host "Invalid input. Please enter an integer"
-            $ValidSeed = $False
-        }
-    } until ($ValidSeed)
-    write-verbose "Seed is [$seed]"
-    $seed
-}
-
-function Get-GameType {
-<#
-.DESCRIPTION
-Asks the player whether to do a fully random word to guess or to seed the randomizer. 
-
-.OUTPUTS
-"random" for a fully random word to guess - "seed" for a game with a seeded randomizer
-#>
-    [CmdletBinding()]
-    param()
-    do{ 
-        try{
-            [int]$UserInput = Read-Host "Enter a game type. '1' for random word or '2' for seeded game (perhaps to play the same game as a friend)" -ErrorAction SilentlyContinue
-            if ($UserInput -eq 1){
-                $GameType = "random"
-            }
-            elseif ($UserInput -eq 2){
-                $GameType = "seed"
-            }
-            else{
-                write-host "Invalid input. Please enter '1' or '2'"
-            }
-            
-        }
-        catch {
-            write-host "Invalid input. Please enter '1' or '2'"
-        }
-    } until (($GameType -eq "random") -or ($GameType -eq "seed"))
-    write-verbose "Game type is [$GameType]"
-    write-output $GameType
 }
 
 function Test-CorrectPlacement {
@@ -590,16 +523,12 @@ function Write-LettersLists {
 if ($HardMode){
     $HardModeText = "Hard Mode "
 }
-#$GameType = Get-GameType 
+
 if ($Random){
     $seed = get-random 
-    $WordToGuess = Get-WordToGuess -seed $seed -HardMode:$HardMode
-}
-else{
-   # $seed = Get-Seed
-    $WordToGuess = Get-WordToGuess -Seed $seed -HardMode:$HardMode
 }
 
+$WordToGuess = Get-WordToGuess -Seed $seed -HardMode:$HardMode
 #start playing the game
 $CurrentRound = 0
 $WonGame = $False
