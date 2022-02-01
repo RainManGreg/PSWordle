@@ -98,7 +98,7 @@ An array of all 5 letter words in the dictionary
             get-content $dictpath
         }
         else {
-            (invoke-webrequest -URI https://github.com/RainManGreg/PSWordle/tree/main/assets/dicts/hardmode.txt).content.split("`n")
+            (invoke-webrequest -URI https://github.com/RainManGreg/PSWordle/blob/main/assets/dicts/hardmode.txt).content.split("`n")
         }
     }
     else{
@@ -108,7 +108,7 @@ An array of all 5 letter words in the dictionary
             get-content $dictpath
         }
         else {
-            (invoke-webrequest -URI https://github.com/RainManGreg/PSWordle/tree/main/assets/dicts/dict.txt).content.split("`n")
+            (invoke-webrequest -URI https://github.com/RainManGreg/PSWordle/blob/main/assets/dicts/dict.txt).content.split("`n")
         }
     }
 }
