@@ -1,9 +1,22 @@
-[CmdletBinding()]
+[CmdletBinding(DefaultParameterSetName='Seed')]
     param(
+        [Parameter(ParameterSetName = 'Seed')]
+        [int]$Seed = (get-date).dayofyear + (get-date).year,
+
+        [Parameter(ParameterSetName = 'Random')]
+        [switch]$Random,
+
+        [Parameter(ParameterSetName = 'Random')]
+        [Parameter(ParameterSetName = 'Seed')]
         [switch]$HardMode,
+
+        [Parameter(ParameterSetName = 'Random')]
+        [Parameter(ParameterSetName = 'Seed')]
         [ValidateScript({$_ -gt 0})] #Can't have fewer than 1 round in the game
         [int]$AllowedRounds = 6,
 
+        [Parameter(ParameterSetName = 'Random')]
+        [Parameter(ParameterSetName = 'Seed')]
         [ValidateSet("Black",
             "DarkBlue",
             "DarkGreen",
@@ -23,6 +36,8 @@
         )]
         [string]$LetterInCorrectSpotColor = "green",
 
+        [Parameter(ParameterSetName = 'Random')]
+        [Parameter(ParameterSetName = 'Seed')]
         [ValidateSet("Black",
             "DarkBlue",
             "DarkGreen",
@@ -42,6 +57,8 @@
         )]
         [string]$LetterInWrongSpotColor = "yellow",
 
+        [Parameter(ParameterSetName = 'Random')]
+        [Parameter(ParameterSetName = 'Seed')]
         [ValidateSet("Black",
             "DarkBlue",
             "DarkGreen",
@@ -122,7 +139,7 @@ $True if the guess is in the dictionary - $False otherwise
         [string]$Guess,
         [switch]$HardMode
     )
-    $inDictionary = $guess -in (Get-Dictionary -HardMode)
+    $inDictionary = ($guess -in (Get-Dictionary -HardMode)) -or ($guess -in (Get-Dictionary))
     write-verbose "Guess is in dictionary: $inDictionary. HardMode value $HardMode"
     $inDictionary
 }
@@ -551,13 +568,13 @@ function Write-LettersLists {
 if ($HardMode){
     $HardModeText = "Hard Mode "
 }
-$GameType = Get-GameType 
-if ($GameType -eq "random"){
+#$GameType = Get-GameType 
+if ($Random){
     $seed = get-random 
     $WordToGuess = Get-WordToGuess -seed $seed -HardMode:$HardMode
 }
-elseif ($GameType -eq "seed"){
-    $seed = Get-Seed
+else{
+   # $seed = Get-Seed
     $WordToGuess = Get-WordToGuess -Seed $seed -HardMode:$HardMode
 }
 
