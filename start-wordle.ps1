@@ -1391,7 +1391,12 @@ function Get-WordOrder_ComboScoring {
         }
         $worddict["$word"] = $score
     }
-
+    $sortedByLetterPopularity_position = $worddict.GetEnumerator() | sort-object value -Descending | select-object -expandproperty key
+    $ofs = ", "
+    write-verbose "Best words according to letter position popularity: "
+    foreach ($word in $sortedByLetterPopularity_position){
+        write-verbose "$word : $($worddict[$word])"
+    }
     $letterdict = @{}
     $worddict = @{}
     
@@ -1439,8 +1444,6 @@ function Get-WordOrder_ComboScoring {
             }
         }
     }
-
-
     #write-verbose "Dictionary keys: $($letterdict.Keys)"
    # write-verbose "Dictionary values: $($letterdict.Values)"
     foreach ($word in $PossibleWords){
@@ -1464,19 +1467,43 @@ function Get-WordOrder_ComboScoring {
     #write-verbose "Word keys: $($worddict.keys)"
     #write-verbose "Word values: $($worddict.values)"
 
-    $sortedByLetterPopularity = $worddict.GetEnumerator() | sort-object value -Descending | select-object -expandproperty key
+    $sortedByLetterPopularity_whole = $worddict.GetEnumerator() | sort-object value -Descending | select-object -expandproperty key
     $ofs = ", "
-    write-verbose "Best words according to combined letter popularity: "
-    foreach ($word in $sortedByLetterPopularity){
+    write-verbose "Best words according to letter popularity through the whole word: "
+    foreach ($word in $sortedByLetterPopularity_whole){
         write-verbose "$word : $($worddict[$word])"
     }
     if ($sortedByLetterPopularity.count -ne 1){ 
+        $scoredict = @{}
+        #give each word a score based on its position in each list. 1 point for best word, 2 for second best, etc... Will rank by lowest overall score at end
+        #get scores from position scoring
+        $count = 1
+        foreach ($word in $sortedByLetterPopularity_position){
+            $scoredict[$word] = $count
+            $count += 1
+        }
+        #get scores from total word scoring
+        $count = 1
+        foreach ($word in $sortedByLetterPopularity_whole){
+            $scoredict[$word] = $Scoredict[$word] + $count
+            $count += 1
+        }
+        
+        #rank them
+        $sortedByLetterPopularity = $scoredict.GetEnumerator() | sort-object value | select-object -expandproperty key
+        $bestWordByLetterPopularity = $sortedByLetterPopularity[0] 
+        write-verbose "Final Ranking:"
+        $sortedByLetterPopularityWholeObj = $scoredict.GetEnumerator() | sort-object value
+        foreach ($word in $sortedByLetterPopularityWholeObj){
+            write-verbose "$($word.key) $($word.value)"
+        }
 
-        $bestWordByLetterPopularity = $sortedByLetterPopularity[0]
+
         $lockedPositions = @()
 
         foreach ($num in 0..4){
             $LetterChanged = $False
+            #write-verbose "$($bestWordByLetterPopularity.gettype())"
             $firstLetter = ($bestWordByLetterPopularity)[$num]
             
             write-verbose "Letter to check to see if it is in every word in position $num : $firstLetter"
