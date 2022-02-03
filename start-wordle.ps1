@@ -76,7 +76,15 @@
             "Yellow",
             "White"
         )]
-        [string]$LetterNotInWordColor = "darkgray"
+        [string]$LetterNotInWordColor = "darkgray",
+
+        [Parameter(ParameterSetName = 'Random')]
+        [Parameter(ParameterSetName = 'Seed')]
+        [switch]$Cheat,
+
+        [Parameter(ParameterSetName = 'Random')]
+        [Parameter(ParameterSetName = 'Seed')]
+        [switch]$Simulation
     )
 
 function Get-Dictionary {
@@ -100,17 +108,21 @@ An array of all 5 letter words in the dictionary
         $filename = "dict.txt"
         $url = "https://raw.githubusercontent.com/RainManGreg/PSWordle/main/assets/dicts/dict.txt"
     }
-
-    $dictpath = join-path -Path $PSScriptRoot -ChildPath "assets" | join-path -ChildPath "dicts" | join-path -ChildPath $filename
+    if ($PSScriptRoot){
+        $dictpath = join-path -Path $PSScriptRoot -ChildPath "assets" | join-path -ChildPath "dicts" | join-path -ChildPath $filename 
+    }
     if (test-path $dictpath){
-        get-content $dictpath -Encoding ascii | where-object {$_ -ne ""}
+        $lower = get-content $dictpath -Encoding ascii | where-object {$_ -ne ""}
+        $lower | foreach-object {$_.toupper()}
+
     }
     else {
         $tempdict = (join-path -path $env:temp -ChildPath $filename)
         if (-not(test-path $tempdict)){
             (invoke-webrequest -URI $url).content | out-file $tempdict -Encoding ascii
         }
-        get-content $tempdict -Encoding ascii | where-object {$_ -ne ""}
+        $lower = get-content $tempdict -Encoding ascii | where-object {$_ -ne ""}
+        $lower | foreach-object {$_.toupper()}
     }
 }
 
@@ -519,6 +531,390 @@ function Write-LettersLists {
    # write-host "`n"
 }
 
+function Get-GuessHelpRegex {
+<# Attributes of the custom objects are:
+    "Letter" : the letter that was guessed
+    "Position" : the position of the letter in the word (0-5)
+    "FoundExact" : $True if the letter and position match the word to guess. $False otherwise.
+    "FoundContains" : $True if the letter is in the word to guess but the position is incorrect. $False otherwise
+#>
+    [CmdletBinding()]
+    Param (
+        [PSCustomObject[]]$WordsArray
+    )
+    $pos0excluded = @()
+    $pos1excluded = @()
+    $pos2excluded = @()
+    $pos3excluded = @()
+    $pos4excluded = @()
+
+    $singleletters = @()
+    $doubledletters = @()
+    $tripledletters = @()
+    $quadrupledletters = @()
+
+    $pos0 = $pos1 = $pos2 = $pos3 = $pos4 = $Null
+
+    foreach ($word in $wordsarray){
+        write-verbose "Word to check: $($word.letter)"
+        $lettersFoundThisRound = @()
+        if (-not($pos0)){
+            if ($word[0].FoundExact){
+                $pos0 = [char]$word[0].Letter
+            }
+            else{
+                if ($word[0].FoundContains){
+                    #letter is in the word but not this position. exclude it for the future and ensure it is in the next guess
+                    write-verbose "$($word[0].Letter) in the word but not in position 0. Excluding for next time."
+                    $lettersFoundThisRound += [char]$word[0].Letter
+                    $pos0excluded += [char]$word[0].Letter
+                } 
+                else {
+                    #letter isn't anywhere in the word, add to all excluded lists
+                    write-verbose "$($word[0].Letter) is not in the word. Excluding it everywhere."
+                    $pos0excluded += [char]$word[0].Letter
+                    $pos1excluded += [char]$word[0].Letter
+                    $pos2excluded += [char]$word[0].Letter
+                    $pos3excluded += [char]$word[0].Letter
+                    $pos4excluded += [char]$word[0].Letter
+                }
+            }
+        }
+        if (-not($pos1)){
+            if ($word[1].FoundExact){
+                $pos1 = [char]$word[1].Letter
+            }
+            else{
+                if ($word[1].FoundContains){
+                    #letter is in the word but not this position. exclude it for the future and ensure it is in the next guess
+                    write-verbose "$($word[1].Letter) in the word but not in position 1. Excluding for next time."
+                    $pos1excluded += [char]$word[1].Letter
+                    $lettersFoundThisRound += [char]$word[1].Letter
+                } 
+                else {
+                    #letter isn't anywhere in the word, add to all excluded lists
+                    if (-not([char]$word[1].Letter -in $lettersFoundThisRound)){
+                        write-verbose "$($word[1].Letter) is not in the word and not already yellow this round. Excluding it everywhere."
+                        $pos0excluded += [char]$word[1].Letter
+                        $pos1excluded += [char]$word[1].Letter
+                        $pos2excluded += [char]$word[1].Letter
+                        $pos3excluded += [char]$word[1].Letter
+                        $pos4excluded += [char]$word[1].Letter
+                    }
+                }
+            }
+        }
+        if (-not($pos2)){
+            if ($word[2].FoundExact){
+                $pos2 = [char]$word[2].Letter
+            }
+            else{
+                if ($word[2].FoundContains){
+                    #letter is in the word but not this position. exclude it for the future and ensure it is in the next guess
+                    write-verbose "$($word[2].Letter) in the word but not in position 2. Excluding for next time."
+                    $lettersFoundThisRound += [char]$word[2].Letter
+                    $pos2excluded += [char]$word[2].Letter
+                } 
+                else {
+                    #letter isn't anywhere in the word, add to all excluded lists
+                    if (-not([char]$word[2].Letter -in $lettersFoundThisRound)){
+                        write-verbose "$($word[2].Letter) is not in the word and not already yellow this round. Excluding it everywhere."
+                        $pos0excluded += [char]$word[2].Letter
+                        $pos1excluded += [char]$word[2].Letter
+                        $pos2excluded += [char]$word[2].Letter
+                        $pos3excluded += [char]$word[2].Letter
+                        $pos4excluded += [char]$word[2].Letter
+                    }
+                }
+            }
+        }
+        if (-not($pos3)){
+            if ($word[3].FoundExact){
+                $pos3 = [char]$word[3].Letter
+            }
+            else{
+                if ($word[3].FoundContains){
+                    #letter is in the word but not this position. exclude it for the future and ensure it is in the next guess
+                    write-verbose "$($word[3].Letter) in the word but not in position 3. Excluding for next time."
+                    $lettersFoundThisRound += [char]$word[3].Letter
+                    $pos3excluded += [char]$word[3].Letter
+                } 
+                else {
+                    #letter isn't anywhere in the word, add to all excluded lists
+                    if (-not([char]$word[3].Letter -in $lettersFoundThisRound)){
+                        write-verbose "$($word[3].Letter) is not in the word and not already yellow this round. Excluding it everywhere."
+                        $pos0excluded += [char]$word[3].Letter
+                        $pos1excluded += [char]$word[3].Letter
+                        $pos2excluded += [char]$word[3].Letter
+                        $pos3excluded += [char]$word[3].Letter
+                        $pos4excluded += [char]$word[3].Letter
+                    }
+                }
+            }
+        }
+        if (-not($pos4)){
+            if ($word[4].FoundExact){
+                $pos4 = [char]$word[4].Letter
+            }
+            else{
+                if ($word[4].FoundContains){
+                    #letter is in the word but not this position. exclude it for the future and ensure it is in the next guess
+                    write-verbose "$($word[4].Letter) in the word but not in position 4. Excluding for next time."
+                    $lettersFoundThisRound += [char]$word[4].Letter
+                    $pos4excluded += [char]$word[4].Letter
+                } 
+                else {
+                    #letter isn't anywhere in the word, add to all excluded lists
+                    if (-not([char]$word[4].Letter -in $lettersFoundThisRound)){
+                        write-verbose "$($word[4].Letter) is not in the word and not already yellow this round. Excluding it everywhere."
+                        write-verbose "$($word[4].Letter) is not in the word. Excluding it everywhere."
+                        $pos0excluded += [char]$word[4].Letter
+                        $pos1excluded += [char]$word[4].Letter
+                        $pos2excluded += [char]$word[4].Letter
+                        $pos3excluded += [char]$word[4].Letter
+                        $pos4excluded += [char]$word[4].Letter
+                    }
+                }
+            }
+        }
+        $currentWord = "$($word.letter)"
+        $lastWord = "$($WordsArray[-1].letter)"
+        write-verbose "$currentWord is current word. $lastword is last word"
+        if ($currentword -eq $lastword){ #only run on last word
+            write-verbose "Words equal each other"
+            write-verbose "Found letters: $lettersFoundThisRound"
+            $groupedFoundLetters = $lettersFoundThisRound | Group-Object
+            #write-output $groupedFoundLetters
+            foreach ($letter in $groupedFoundLetters){
+                if ($letter.count -eq 4){
+                    $quadrupledletters += $letter.name
+                }
+                elseif ($letter.count -eq 3){
+                    $tripledletters += $letter.name
+                }
+                elseif ($letter.count -eq 2){
+                    $doubledletters += $letter.name
+                }
+                else{
+                    $singleletters += $letter.name
+                }
+            }
+            write-verbose "Single letters: $singleletters"
+            write-verbose "Double letters: $doubledletters"
+            write-verbose "Triple letters: $tripledletters"
+            write-verbose "Quadruple letters: $quadrupledletters"
+        }   
+    }
+
+    if ($pos0){
+        $pos0regex = $pos0
+    }
+    else {
+        $pos0regex = '[^'
+        $uniqueLetters = $pos0excluded | sort-object | get-unique
+        $ofs = "" #weird $ofs variable makes array written to string have no separator because value is empty string
+        $lettersToAdd = "$uniqueLetters"
+        $pos0regex += "$lettersToAdd]"
+    }
+    write-verbose "regex pos 0 string is $pos0regex"
+    if ($pos1){
+        $pos1regex = $pos1
+    }
+    else {
+        $pos1regex = '[^'
+        $uniqueLetters = $pos1excluded | sort-object | get-unique
+        $ofs = "" #weird $ofs variable makes array written to string have no separator because value is empty string
+        $lettersToAdd = "$uniqueLetters"
+        $pos1regex += "$lettersToAdd]"
+    }
+    write-verbose "regex pos 1 string is $pos1regex"
+    if ($pos2){
+        $pos2regex = $pos2
+    }
+    else {
+        $pos2regex = '[^'
+        $uniqueLetters = $pos2excluded | sort-object | get-unique
+        $ofs = "" #weird $ofs variable makes array written to string have no separator because value is empty string
+        $lettersToAdd = "$uniqueLetters"
+        $pos2regex += "$lettersToAdd]"
+    }
+    write-verbose "regex pos 2 string is $pos2regex"
+    if ($pos3){
+        $pos3regex = $pos3
+    }
+    else {
+        $pos3regex = '[^'
+        $uniqueLetters = $pos3excluded | sort-object | get-unique
+        $ofs = "" #weird $ofs variable makes array written to string have no separator because value is empty string
+        $lettersToAdd = "$uniqueLetters"
+        $pos3regex += "$lettersToAdd]"
+    }
+    write-verbose "regex pos 3 string is $pos3regex"
+    if ($pos4){
+        $pos4regex = $pos4
+    }
+    else {
+        $pos4regex = '[^'
+        $uniqueLetters = $pos4excluded | sort-object | get-unique
+        $ofs = "" #weird $ofs variable makes array written to string have no separator because value is empty string
+        $lettersToAdd = "$uniqueLetters"
+        $pos4regex += "$lettersToAdd]"
+    }
+    write-verbose "regex pos 4 string is $pos4regex"
+
+    $regex = $pos0regex + $pos1regex + $pos2regex + $pos3regex + $pos4regex 
+    
+    #add forward lookahead assertions
+    if (-not($singleletters) -and -not($doubledletters) -and -not($tripledletters) -and -not($quadrupledletters)){
+        write-verbose "No yellow letters found. Final regex is: $regex"
+    }
+    else{
+        write-verbose "Forward Lookaheads needed. Starting regex is: $regex"
+        $additionalRegex = "(?=$regex)"
+        if ($SingleLetters){
+            foreach ($Letter in $singleletters){
+                $additionalRegex += "(?=.*$letter.*)"
+            }
+            write-verbose "Regex after adding single letters: $additionalregex"
+        }
+        if ($doubledletters){
+            foreach ($Letter in $doubledletters){
+                $additionalRegex += "(?=.*$letter.*$letter.*)"
+            }
+            write-verbose "Regex after adding double letters: $additionalregex"
+        }
+        if ($tripledletters){
+            foreach ($Letter in $tripledletters){
+                $additionalRegex += "(?=.*$letter.*$letter.*$letter.*)"
+            }
+            write-verbose "Regex after adding triple letters: $additionalregex"
+        }
+        if ($quadrupledletters){
+            foreach ($Letter in $quadrupledletters){
+                $additionalRegex += "(?=.*$letter.*$letter.*$letter.*$letter.*)"
+            }
+            write-verbose "Regex after adding quadruple letters: $additionalregex"
+        }
+        $regex = $additionalRegex
+        write-verbose "Final regex after adding forward lookaheads: $regex"
+    }
+    $regex
+}
+
+function Get-GuessHelpPossibleWords {
+    [CmdletBinding()]
+    Param (
+        [Parameter(Mandatory=$True)]  
+        [string]$Regex
+    )
+
+    $Dictionary = Get-Dictionary 
+    $PossibleWords = $Dictionary | select-string -Pattern $Regex
+    $ofs = " "
+    write-verbose "Possible words: $PossibleWords"
+    $PossibleWords
+}
+
+function Get-GuessHelpWordOrder {
+    [CmdletBinding()]
+    Param (
+        [Parameter(Mandatory=$True)]  
+        [string[]]$PossibleWords
+    )
+
+    $letterdict = @{}
+    $worddict = @{}
+    #build dictionary of letters/num times they occur
+    foreach ($word in $PossibleWords){
+        foreach ($Letter in $word.ToCharArray()){
+            #write-verbose $Letter
+            if ($letterdict.keys -contains $Letter){
+                #write-verbose "$Letter is already in the dictionary. Incrementing the count by one."
+                $letterdict["$Letter"] = $letterdict["$letter"] + 1
+            }
+            else{
+                #write-verbose "Adding $Letter to the dictionary."
+                $letterdict["$Letter"] = 1
+            }
+        }
+    }
+
+
+    write-verbose "Dictionary keys: $($letterdict.Keys)"
+    write-verbose "Dictionary values: $($letterdict.Values)"
+    foreach ($word in $PossibleWords){
+        $score = 0
+        foreach ($Letter in $word.ToCharArray()){
+            $score += $letterdict["$Letter"]
+        }
+        $worddict["$word"] = $score
+    }
+    #write-verbose "Word keys: $($worddict.keys)"
+    #write-verbose "Word values: $($worddict.values)"
+
+    $sortedByLetterPopularity = $worddict.GetEnumerator() | sort-object value -Descending | select-object -expandproperty key
+    $ofs = ", "
+    write-verbose "Best words according to letter popularity: "
+    foreach ($word in $sortedByLetterPopularity){
+        write-verbose "$word : $($worddict[$word])"
+    }
+    if ($sortedByLetterPopularity.count -ne 1){ 
+
+        $bestWordByLetterPopularity = $sortedByLetterPopularity[0]
+        $lockedPositions = @()
+
+        foreach ($num in 0..4){
+            $LetterChanged = $False
+            $firstLetter = ($bestWordByLetterPopularity)[$num]
+            
+            write-verbose "Letter to check to see if it is in every word in position $num : $firstLetter"
+
+            foreach ($word in $sortedByLetterPopularity){
+                if (-not($LetterChanged)){
+                    write-verbose "Word we are checking is $word. Character we are checking is $($word.ToCharArray()[$num]) in position $num"
+                    if ($word.ToCharArray()[$num] -ne $firstLetter){
+                        write-verbose "The letter in position $num changed so it is not a locked position"
+                        $LetterChanged = $TRUE
+                    }
+                }
+            }
+            if (-Not($LetterChanged)){
+                write-verbose "The letter in position $num never changed so $num is a locked position."
+                $lockedPositions += $num
+            }
+        }
+        write-verbose "Locked Positions: $lockedPositions"
+
+        $wordsWithoutUnnecessaryDoubles = foreach ($word in $sortedByLetterPopularity){
+            $allowedPositions = 0..4 | where-object {-Not($_ -in $lockedPositions)}
+            [string]$reducedWord = foreach ($num in $allowedPositions){
+                $word[$num]
+            }
+            write-verbose "Word after removing locked positions: $reducedWord"
+
+            $lettersOccurringMoreThanOnce = $reducedword.ToCharArray() | group-object | where-object {$_.count -gt 1}
+            if (-not($lettersOccurringMoreThanOnce)){
+                write-verbose "$word has no avoidable doubles so we are fine with it"
+                write-output $word
+            }
+        }
+        if ($wordsWithoutUnnecessaryDoubles){
+            
+                write-output $wordsWithoutUnnecessaryDoubles
+                $ofs = ", "
+                write-verbose "The words without unnecessary doubles in guess quality order are $wordsWithoutUnnecessaryDoubles."
+            
+        }
+        else{
+            write-output $sortedByLetterPopularity
+            write-verbose "All words have unnecessary doubles so returning original list $sortedByLetterPopularity from letter popularity."
+        }
+    }
+    else {
+        write-verbose "The only word in the list is $sortedByLetterPopularity so it must be the word"
+        write-output $sortedByLetterPopularity #only word so return it
+    }
+} 
 #Initialize game - get word
 if ($HardMode){
     $HardModeText = "Hard Mode "
@@ -533,44 +929,104 @@ $WordToGuess = Get-WordToGuess -Seed $seed -HardMode:$HardMode
 $CurrentRound = 0
 $WonGame = $False
 $resultsArray = @()
-
-Write-GameInstructions
+if (-not($Simulation)){
+    Write-GameInstructions
+}
 while (($CurrentRound -lt $ALLOWEDROUNDS) -and (-not($WonGame))){
     $CurrentRound += 1
     if ($CurrentRound -eq $ALLOWEDROUNDS){ #last round is over so the game is over one way or the other
         $GameOver = $True
     }
-    $guess = Get-Guess -HardMode
-    clear-host
+    if (-not($suggestedGuess)){
+        if (-not($Cheat)){
+            $guess = Get-Guess -HardMode
+        }
+        else {
+            $guess = "ALERT" #the best guess supposedly
+        }
+    }
+    else {
+        write-verbose $suggestedGuess
+        $guess = $suggestedGuess
+
+    }
+    #clear-host
 
     $result = Test-Guess -Guess $guess -Word $WordToGuess 
     $resultsArray += @(,$result) #keep track of all the guesses in an array of arrays
-    write-host "Round $CurrentRound/$ALLOWEDROUNDS"
+    if (-not($Simulation)){
+        write-host "Round $CurrentRound/$ALLOWEDROUNDS"
+    }
     foreach ($round in $resultsArray){ #write out all the guesses so far
-        Write-FormattedWord -word $round
+        if (-not($Simulation)){
+            Write-FormattedWord -word $round
+        }
     }
 
     if ((($result | select-object -uniq FoundExact).FoundExact.count -eq 1) -and (($result | select-object -uniq FoundExact).FoundExact[0])){ #if every letter is in the exact right position the player won
         $WonGame = $True
         $GameOver = $True
-        Write-Host "`nYou win! Yay!`n"
+        if (-not($Simulation)){
+            Write-Host "`nYou win! Yay!`n"
+        }
     }
     If(-Not($GameOver)){ #show unguessed letter list only if game isn't over
-        Write-LettersLists -WordsArray $resultsArray
+        if (-not($Simulation)){
+            Write-LettersLists -WordsArray $resultsArray
+        }
+        If ($Cheat){ #sometimes you want the computer to do the thinking
+            $possiblewords = $suggestedGuessOrder = $suggestedGuess = $NULL
+            $regex = Get-GuessHelpRegex -WordsArray $resultsArray
+            $possiblewords = Get-GuessHelpPossibleWords -Regex $regex
+            if ($possiblewords){
+                if ($possiblewords.count -gt 1){  #only try to order them if there is more than one   
+                    $suggestedGuessOrder = Get-GuessHelpWordOrder -PossibleWords $possiblewords
+                    if ($suggestedGuessOrder.count -gt 1){
+                        $suggestedGuess = $suggestedGuessOrder[0]
+                    }
+                    else{$suggestedGuess = $suggestedGuessOrder}
+                }
+                else { #if only one guess then guess it 
+                    $suggestedGuess = $possiblewords
+                }
+            }
+            else{
+                write-verbose "No possible words found. D'oh"
+            }
+            
+        }
     }
+    
 }
 if (-not($WonGame)){
-    Write-Host "`nYou lose. Shoot. The word was [$WordToGuess]`n"
+    if (-not($Simulation)){
+        Write-Host "`nYou lose. Shoot. The word was [$WordToGuess]`n"
+    }
+    $returnScore = -1
 }
-
+else{
+    $returnScore = $CurrentRound
+}
 #Display Final Results
 if ($Seed){
-    Write-host "Wordle $HardModeText#$seed ($CurrentRound/$ALLOWEDROUNDS)"
+    if (-not($Simulation)){
+        Write-host "Wordle $HardModeText#$seed ($CurrentRound/$ALLOWEDROUNDS)"
+    }
 }
 else {
-    Write-host "Wordle $HardModeText($CurrentRound/$ALLOWEDROUNDS)"
+    if (-not($Simulation)){
+        Write-host "Wordle $HardModeText($CurrentRound/$ALLOWEDROUNDS)"
+    }
 }
 foreach ($round in $resultsArray){
-    Write-FormattedWord -word $round -Hidden
+    if (-not($Simulation)){
+        Write-FormattedWord -word $round -Hidden
+    }
 }
-$host.ui.RawUI.ReadKey("NoEcho,IncludeKeyDown") | out-null
+if ($Cheat){
+    $properties = @{
+        'Word' = $WordToGuess;
+        'Score' = $returnScore;
+    }
+    New-Object -TypeName PSObject -Prop $properties
+}
