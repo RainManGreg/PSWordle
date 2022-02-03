@@ -8,15 +8,18 @@
 
         [Parameter(ParameterSetName = 'Random')]
         [Parameter(ParameterSetName = 'Seed')]
+        [Parameter(ParameterSetName = 'SuppliedWord')]
         [switch]$HardMode,
 
         [Parameter(ParameterSetName = 'Random')]
         [Parameter(ParameterSetName = 'Seed')]
+        [Parameter(ParameterSetName = 'SuppliedWord')]
         [ValidateScript({$_ -gt 0})] #Can't have fewer than 1 round in the game
         [int]$AllowedRounds = 6,
 
         [Parameter(ParameterSetName = 'Random')]
         [Parameter(ParameterSetName = 'Seed')]
+        [Parameter(ParameterSetName = 'SuppliedWord')]
         [ValidateSet("Black",
             "DarkBlue",
             "DarkGreen",
@@ -38,6 +41,7 @@
 
         [Parameter(ParameterSetName = 'Random')]
         [Parameter(ParameterSetName = 'Seed')]
+        [Parameter(ParameterSetName = 'SuppliedWord')]
         [ValidateSet("Black",
             "DarkBlue",
             "DarkGreen",
@@ -59,6 +63,7 @@
 
         [Parameter(ParameterSetName = 'Random')]
         [Parameter(ParameterSetName = 'Seed')]
+        [Parameter(ParameterSetName = 'SuppliedWord')]
         [ValidateSet("Black",
             "DarkBlue",
             "DarkGreen",
@@ -80,11 +85,16 @@
 
         [Parameter(ParameterSetName = 'Random')]
         [Parameter(ParameterSetName = 'Seed')]
+        [Parameter(ParameterSetName = 'SuppliedWord')]
         [switch]$Cheat,
 
         [Parameter(ParameterSetName = 'Random')]
         [Parameter(ParameterSetName = 'Seed')]
-        [switch]$Simulation
+        [Parameter(ParameterSetName = 'SuppliedWord')]
+        [switch]$Simulation,
+
+        [Parameter(ParameterSetName = 'SuppliedWord')]
+        [string]$WordToGuess
     )
 
 function Get-Dictionary {
@@ -924,8 +934,9 @@ if ($HardMode){
 if ($Random){
     $seed = get-random 
 }
-
-$WordToGuess = Get-WordToGuess -Seed $seed -HardMode:$HardMode
+if (-not($WordToGuess)){
+    $WordToGuess = Get-WordToGuess -Seed $seed -HardMode:$HardMode
+}
 #start playing the game
 $CurrentRound = 0
 $WonGame = $False
