@@ -937,6 +937,17 @@ if ($Random){
 if (-not($WordToGuess)){
     $WordToGuess = Get-WordToGuess -Seed $seed -HardMode:$HardMode
 }
+else{
+    if ($HardMode){
+        $dict = Get-Dictionary -HardMode
+    }
+    else{
+        $dict = Get-Dictionary
+    }
+    if (-not($WordToGuess -in $dict)){
+        throw "Invalid word [$($WordToGuess.toupper())]. It is not in the dictionary"
+    }
+}
 #start playing the game
 $CurrentRound = 0
 $WonGame = $False
