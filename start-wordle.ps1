@@ -887,6 +887,7 @@ function Get-GuessHelpWordOrder {
 
         $wordsWithoutUnnecessaryDoubles = foreach ($word in $sortedByLetterPopularity){
             $allowedPositions = 0..4 | where-object {-Not($_ -in $lockedPositions)}
+            $ofs = ""
             [string]$reducedWord = foreach ($num in $allowedPositions){
                 $word[$num]
             }
@@ -1023,7 +1024,7 @@ foreach ($round in $resultsArray){
         Write-FormattedWord -word $round -Hidden
     }
 }
-if ($Cheat){
+if ($Simulation){
     $properties = @{
         'Word' = $WordToGuess;
         'Score' = $returnScore;
