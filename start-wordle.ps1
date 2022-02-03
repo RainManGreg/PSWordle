@@ -93,6 +93,11 @@
         [Parameter(ParameterSetName = 'SuppliedWord')]
         [switch]$Simulation,
 
+        [Parameter(ParameterSetName = 'Random')]
+        [Parameter(ParameterSetName = 'Seed')]
+        [Parameter(ParameterSetName = 'SuppliedWord')]
+        [string]$FirstWord,
+
         [Parameter(ParameterSetName = 'SuppliedWord')]
         [string]$WordToGuess
     )
@@ -120,6 +125,9 @@ An array of all 5 letter words in the dictionary
     }
     if ($PSScriptRoot){
         $dictpath = join-path -Path $PSScriptRoot -ChildPath "assets" | join-path -ChildPath "dicts" | join-path -ChildPath $filename 
+    }
+    else {
+        $dictpath = ".\$filename"
     }
     if (test-path $dictpath){
         $lower = get-content $dictpath -Encoding ascii | where-object {$_ -ne ""}
@@ -538,7 +546,7 @@ function Write-LettersLists {
         }
         write-host ""
     }
-   # write-host "`n"
+   write-host ""
 }
 
 function Get-GuessHelpRegex {
@@ -566,6 +574,7 @@ function Get-GuessHelpRegex {
     $pos0 = $pos1 = $pos2 = $pos3 = $pos4 = $Null
 
     foreach ($word in $wordsarray){
+        $ofs = ""
         write-verbose "Word to check: $($word.letter)"
         $lettersFoundThisRound = @()
         if (-not($pos0)){
@@ -687,6 +696,7 @@ function Get-GuessHelpRegex {
                 }
             }
         }
+        $ofs = ""
         $currentWord = "$($word.letter)"
         $lastWord = "$($WordsArray[-1].letter)"
         write-verbose "$currentWord is current word. $lastword is last word"
@@ -965,7 +975,12 @@ while (($CurrentRound -lt $ALLOWEDROUNDS) -and (-not($WonGame))){
             $guess = Get-Guess -HardMode
         }
         else {
-            $guess = "ALERT" #the best guess supposedly
+            if ($psboundparameters.containskey('FirstWord')){
+                $guess = $FirstWord.toupper()
+            }
+            else{
+                $guess = "ALERT" #the best guess supposedly
+            }
         }
     }
     else {
@@ -1031,7 +1046,7 @@ else{
     $returnScore = $CurrentRound
 }
 #Display Final Results
-if ($Seed){
+if ($psboundparameters.containskey('Seed')){
     if (-not($Simulation)){
         Write-host "Wordle $HardModeText#$seed ($CurrentRound/$ALLOWEDROUNDS)"
     }
@@ -1047,9 +1062,24 @@ foreach ($round in $resultsArray){
     }
 }
 if ($Simulation){
-    $properties = @{
-        'Word' = $WordToGuess;
-        'Score' = $returnScore;
+    $guessedWords = foreach ($word in $resultsArray){
+        $ofs = ""
+        "$($word.letter)"
+    } 
+    if ($psboundparameters.containskey('Seed')){
+        $properties = @{
+            'Word' = $WordToGuess;
+            'Score' = $returnScore;
+            'GuessedWords' = $guessedWords;
+            'Seed' = $seed
+        }
+    }
+    else{
+        $properties = @{
+            'Word' = $WordToGuess;
+            'Score' = $returnScore;
+            'GuessedWords' = $guessedWords
+        }
     }
     New-Object -TypeName PSObject -Prop $properties
 }
