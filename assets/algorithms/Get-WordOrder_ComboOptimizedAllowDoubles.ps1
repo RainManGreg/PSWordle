@@ -110,6 +110,7 @@ foreach ($word in $PossibleWords){
         if ($count -eq 4){
             $score += $letterdict4["$Letter"]
         }
+        $count += 1
     }
     $worddict["$word"] = $score
 }

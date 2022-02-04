@@ -51,7 +51,7 @@ You can use `-cheat` to use a solver. Choose the algorithm with `-algorithm`. Ch
 ### Choosing the random word to guess
 Choose the word you want to guess with `-WordToGuess`. This is useful for testing out the solver algorithms. 
 
-###Word selection algorithm plugin
+### Word selection algorithm plugin
 An alternative version of wordle is `.\Start-Wordle-AlgInput.ps`. You can pass in a script that chooses the word to guess from a list of possible words with the `-AlgorithmPath` parameter `-PossibleWords` that is an array of words to choose one from and return a single word to be the guess. Include the path to the file.
 
 ## Troubleshooting

@@ -1206,6 +1206,7 @@ function Get-WordOrder_PositionScoring {
             if ($count -eq 4){
                 $score += $letterdict4["$Letter"]
             }
+            $count += 1
         }
         $worddict["$word"] = $score
     }
@@ -1388,6 +1389,7 @@ function Get-WordOrder_ComboScoring {
             if ($count -eq 4){
                 $score += $letterdict4["$Letter"]
             }
+            $count += 1
         }
         $worddict["$word"] = $score
     }
