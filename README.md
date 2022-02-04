@@ -44,6 +44,16 @@ By default, the letters are green if they are correct, yellow if they're in the 
 
 `.\Start-Wordle.ps1 -LetterInCorrectSpotColor blue -LetterInWrongSpotColor yellow -LetterNotInWordColor red`
 
+## Using Solvers
+
+You can use `-cheat` to use a solver. Choose the algorithm with `-algorithm`. Choose which word to be the solver's initial guess with `-FirstWord`. Run a simulation with reduced console output with `-Simulation`... it will return results in a PS object. 
+
+### Choosing the random word to guess
+Choose the word you want to guess with `-WordToGuess`. This is useful for testing out the solver algorithms. 
+
+###Word selection algorithm plugin
+An alternative version of wordle is `.\Start-Wordle-AlgInput.ps`. You can pass in a script that chooses the word to guess from a list of possible words with the `-AlgorithmPath` parameter `-PossibleWords` that is an array of words to choose one from and return a single word to be the guess. Include the path to the file.
+
 ## Troubleshooting
 
 If you get an error that start-wordle.ps1 is not digitally signed you may need to change your PowerShell execution policy first:
