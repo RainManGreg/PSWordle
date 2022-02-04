@@ -1,3 +1,9 @@
+[CmdletBinding()]
+    param(
+        [string]$FilePath = "C:\temp\wordleresults\wordle.txt",
+        [ValidateSet("Original","NoPointsForLockedLetters", "PositionScoring", "ComboScoring", "ComboScoringOptimized")]
+        [string]$Algorithm = "Original"
+    )
 
 function Get-Dictionary {
     [CmdletBinding()]
@@ -193,7 +199,7 @@ foreach ($firstword in $wordorder){
     $allwordsoutput = foreach ($wordtoguess in $dict){
         $j += 1
         write-progress -Activity "Simulating wordle ... [$j/$($dict.count)] Word to Guess : [$wordtoguess]    [[$i/$($wordorder.count)]] First Word : [$firstword] " -PercentComplete (($i / $wordorder.count)*100)
-        & $path -WordToGuess $wordtoguess -Cheat -Simulation -FirstWord $firstword -allowedrounds 100 
+        & $path -WordToGuess $wordtoguess -Cheat -Simulation -FirstWord $firstword -allowedrounds 100 -algorithm $Algorithm
     }
     $mean = $allwordsoutput | select-object -expandproperty score | measure-object -Average | select-object count, average
     $failedwordsequences = $allwordsoutput | where-object {$_.score -gt 6} | select-object GuessedWords
@@ -208,7 +214,7 @@ foreach ($firstword in $wordorder){
         'FailedWords' = "$failedwords"
     }
     $obj = new-object -typename psobject -prop $prop
-    "$($obj.Guess), $($obj.Mean), $($obj.FailedCount), $($obj.failedwords)" | out-file -Append -FilePath c:\temp\wordlesim.txt
+    "$($obj.Guess), $($obj.Mean), $($obj.FailedCount), $($obj.failedwords)" | out-file -Append -FilePath $FilePath
     write-output $obj
 }
 
