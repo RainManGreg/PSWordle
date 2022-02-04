@@ -55,19 +55,19 @@ if ($sortedByLetterPopularity.count -ne 1){
         $LetterChanged = $False
         $firstLetter = ($bestWordByLetterPopularity)[$num]
         
-        write-verbose "Letter to check to see if it is in every word in position $num : $firstLetter"
+       # write-verbose "Letter to check to see if it is in every word in position $num : $firstLetter"
 
         foreach ($word in $sortedByLetterPopularity){
             if (-not($LetterChanged)){
-                write-verbose "Word we are checking is $word. Character we are checking is $($word.ToCharArray()[$num]) in position $num"
+                #write-verbose "Word we are checking is $word. Character we are checking is $($word.ToCharArray()[$num]) in position $num"
                 if ($word.ToCharArray()[$num] -ne $firstLetter){
-                    write-verbose "The letter in position $num changed so it is not a locked position"
+                    #write-verbose "The letter in position $num changed so it is not a locked position"
                     $LetterChanged = $TRUE
                 }
             }
         }
         if (-Not($LetterChanged)){
-            write-verbose "The letter in position $num never changed so $num is a locked position."
+            #write-verbose "The letter in position $num never changed so $num is a locked position."
             $lockedPositions += $num
         }
     }
@@ -79,11 +79,11 @@ if ($sortedByLetterPopularity.count -ne 1){
         [string]$reducedWord = foreach ($num in $allowedPositions){
             $word[$num]
         }
-        write-verbose "Word after removing locked positions: $reducedWord"
+        #write-verbose "Word after removing locked positions: $reducedWord"
 
         $lettersOccurringMoreThanOnce = $reducedword.ToCharArray() | group-object | where-object {$_.count -gt 1}
         if (-not($lettersOccurringMoreThanOnce)){
-            write-verbose "$word has no avoidable doubles so we are fine with it"
+            #write-verbose "$word has no avoidable doubles so we are fine with it"
             write-output $word
         }
     }
