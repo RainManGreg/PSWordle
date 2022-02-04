@@ -1556,30 +1556,6 @@ function Get-WordOrder_ComboScoring {
     }
 }
 
-#Initialize game - get word
-if ($HardMode){
-    $HardModeText = "Hard Mode "
-}
-
-if ($Random){
-    $seed = get-random 
-}
-if (-not($WordToGuess)){
-    $WordToGuess = Get-WordToGuess -Seed $seed -HardMode:$HardMode
-}
-else{
-    if ($HardMode){
-        $dict = Get-Dictionary -HardMode
-    }
-    else{
-        $dict = Get-Dictionary
-    }
-    if (-not($WordToGuess -in $dict)){
-        throw "Invalid word [$($WordToGuess.toupper())]. It is not in the dictionary"
-    }
-}
-
-
 function Get-WordOrder_ComboScoringOptimized {
     #combines the two scoring methods
     [CmdletBinding()]
@@ -1905,12 +1881,11 @@ else{
     }
 }
 
-
 #start playing the game
 $CurrentRound = 0
 $WonGame = $False
 $resultsArray = @()
-if (-not($Simulation)){
+if (-not($Simulation) -and -not($Cheat)){
     Write-GameInstructions
 }
 while (($CurrentRound -lt $ALLOWEDROUNDS) -and (-not($WonGame))){
@@ -1957,7 +1932,7 @@ while (($CurrentRound -lt $ALLOWEDROUNDS) -and (-not($WonGame))){
         }
     }
     If(-Not($GameOver)){ #show unguessed letter list only if game isn't over
-        if (-not($Simulation)){
+        if (-not($Simulation) -and -not($Cheat)){
             Write-LettersLists -WordsArray $resultsArray
         }
         If ($Cheat){ #sometimes you want the computer to do the thinking
@@ -2011,12 +1986,12 @@ else{
 #Display Final Results
 if ($psboundparameters.containskey('Seed')){
     if (-not($Simulation)){
-        Write-host "Wordle $HardModeText#$seed ($CurrentRound/$ALLOWEDROUNDS)"
+        Write-host "Wordle $AlgorithmText$HardModeText#$seed ($CurrentRound/$ALLOWEDROUNDS)"
     }
 }
 else {
     if (-not($Simulation)){
-        Write-host "Wordle $HardModeText($CurrentRound/$ALLOWEDROUNDS)"
+        Write-host "Wordle $AlgorithmText$HardModeText($CurrentRound/$ALLOWEDROUNDS)"
     }
 }
 foreach ($round in $resultsArray){

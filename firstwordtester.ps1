@@ -2,7 +2,8 @@
     param(
         [string]$FilePath = "C:\temp\wordleresults\wordle.txt",
         [ValidateSet("Original","NoPointsForLockedLetters", "PositionScoring", "ComboScoring", "ComboScoringOptimized")]
-        [string]$Algorithm = "Original"
+        [string]$Algorithm = "Original",
+        [string]$StartingWord = "Alert"
     )
 
 function Get-Dictionary {
@@ -189,8 +190,19 @@ function Get-GuessHelpWordOrder2 {
 $dict = Get-Dictionary
 #dictreduced = $dict | select -first 10
 $wordorder = Get-GuessHelpWordOrder2 -PossibleWords $dict
-$i = 0
+$FOUND = $false
+$count = 0
+do{
+    if ($wordorder[$count] -eq $StartingWord){ 
+        $FOUND = $TRUE
+        $wordorder[$count]
+    }
+    else { 
+        $count += 1 
+    }
+}while (-not($FOUND -eq $TRUE))
 
+$wordorder = $wordorder | select-object -Last ($wordorder.count - $count)
 $path = join-path -Path $PSScriptRoot -ChildPath "start-wordle.ps1"
 foreach ($firstword in $wordorder){
     $j = 0
