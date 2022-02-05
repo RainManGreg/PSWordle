@@ -45,6 +45,9 @@
         [Parameter(ParameterSetName = 'Judge')]
         [switch]$Judge,
 
+        [Parameter(ParameterSetName = 'Judge',Mandatory = $True)]
+        [string[]]$WordsGuessed,
+
         [Parameter(ParameterSetName = 'Random')]
         [Parameter(ParameterSetName = 'Seed')]
         [Parameter(ParameterSetName = 'SuppliedWord')]
@@ -932,7 +935,7 @@ while (($CurrentRound -lt $ALLOWEDROUNDS) -and (-not($WonGame))){
     if ($CurrentRound -eq $ALLOWEDROUNDS){ #last round is over so the game is over one way or the other
         $GameOver = $True
     }
-    if (-not($suggestedGuess)){
+    if (-not($suggestedGuess) -and -not($Judge)){
         if (-not($Cheat)){
             $guess = Get-Guess -HardMode
         }
@@ -963,10 +966,15 @@ while (($CurrentRound -lt $ALLOWEDROUNDS) -and (-not($WonGame))){
                     Write-output "The only remaining word is`:"
                     $SuggestedGuessOrder
                 }
+                $guess = get-guess -HardMode
             }
-            $guess = get-guess -HardMode
+            
             if ($Judge){
                 $found = $false
+                $guess = $WordsGuessed[$CurrentRound-1].toupper()#because round was already incremented
+                if($CurrentRound -eq 1){ #Need To Build $SuggestedGuessOrder for first round
+                    $suggestedGuessOrder = & $AlgorithmFile -PossibleWords $Dict
+                }
                 if ($guess -in $SuggestedGuessOrder){
                     if ($SuggestedGuessOrder.count -gt 1){
                         $count = 0
@@ -979,7 +987,7 @@ while (($CurrentRound -lt $ALLOWEDROUNDS) -and (-not($WonGame))){
                         }while (-not($found))
                         Write-output "Your guess [$guess] was number [$count/$($suggestedGuessOrder.count)] in the possible word list."
                         Write-output "Better Words:"
-                        foreach ($Word in ($SuggestedGuessOrder| select-object -First $count)){
+                        foreach ($Word in ($SuggestedGuessOrder| select-object -First ($count-1))){
                             write-output $word
                         }
                     }
@@ -1004,7 +1012,7 @@ while (($CurrentRound -lt $ALLOWEDROUNDS) -and (-not($WonGame))){
     $result = Test-Guess -Guess $guess -Word $WordToGuess 
     $resultsArray += @(,$result) #keep track of all the guesses in an array of arrays
     if (-not($Simulation)){
-        write-host "Round $CurrentRound/$ALLOWEDROUNDS"
+        write-host "`nRound $CurrentRound/$ALLOWEDROUNDS"
     }
     foreach ($round in $resultsArray){ #write out all the guesses so far
         if (-not($Simulation)){
@@ -1020,7 +1028,7 @@ while (($CurrentRound -lt $ALLOWEDROUNDS) -and (-not($WonGame))){
         }
     }
     If(-Not($GameOver)){ #show unguessed letter list only if game isn't over
-        if (-not($Simulation) -and -not($Cheat)){
+        if (-not($Simulation) -and -not($Cheat) -and -not($Judge)){
             Write-LettersLists -WordsArray $resultsArray
         }
         If ($Cheat -or $Help -or $Judge){ #sometimes you want the computer to do the thinking
