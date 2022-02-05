@@ -927,7 +927,7 @@ if ($psboundparameters.ContainsKey("AlgorithmFile")){
 $CurrentRound = 0
 $WonGame = $False
 $resultsArray = @()
-if (-not($Simulation) -and -not($Cheat)){
+if (-not($Simulation) -and -not($Cheat) -and -not ($Judge)){
     Write-GameInstructions
 }
 while (($CurrentRound -lt $ALLOWEDROUNDS) -and (-not($WonGame))){
@@ -986,9 +986,17 @@ while (($CurrentRound -lt $ALLOWEDROUNDS) -and (-not($WonGame))){
                             $count += 1
                         }while (-not($found))
                         Write-output "Your guess [$guess] was number [$count/$($suggestedGuessOrder.count)] in the possible word list."
-                        Write-output "Better Words:"
-                        foreach ($Word in ($SuggestedGuessOrder| select-object -First ($count-1))){
-                            write-output $word
+                        if ($count -lt 20){
+                            Write-output "Better Words:"
+                            foreach ($Word in ($SuggestedGuessOrder| select-object -First ($count-1))){
+                                write-output $word
+                            }
+                        }
+                        else {
+                            Write-Output "Top 20 better Words:"
+                            foreach ($Word in ($SuggestedGuessOrder | select-object -First 20)){
+                                write-output $word
+                            }
                         }
                     }
                     elseif ($SuggestedGuessOrder.count -eq 1){
