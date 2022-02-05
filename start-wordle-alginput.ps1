@@ -1,12 +1,18 @@
 [CmdletBinding(DefaultParameterSetName='Seed')]
     param(
         [Parameter(ParameterSetName = 'Seed')]
+        [Parameter(ParameterSetName = 'Help')]
+        [Parameter(ParameterSetName = 'Judge')]
         [int]$Seed = (get-date).dayofyear + (get-date).year,
 
         [Parameter(ParameterSetName = 'Random')]
+        [Parameter(ParameterSetName = 'Help')]
+        [Parameter(ParameterSetName = 'Judge')]
         [switch]$Random,
 
         [Parameter(ParameterSetName = 'SuppliedWord')]
+        [Parameter(ParameterSetName = 'Help')]
+        [Parameter(ParameterSetName = 'Judge')]
         [string]$WordToGuess,
 
         [Parameter(ParameterSetName = 'Random')]
@@ -17,6 +23,8 @@
         [Parameter(ParameterSetName = 'Random')]
         [Parameter(ParameterSetName = 'Seed')]
         [Parameter(ParameterSetName = 'SuppliedWord')]
+        [Parameter(ParameterSetName = 'Help',Mandatory=$true)]
+        [Parameter(ParameterSetName = 'Judge',Mandatory=$true)]
         [string]$AlgorithmFile,
 
         [Parameter(ParameterSetName = 'Random')]
@@ -27,27 +35,36 @@
         [Parameter(ParameterSetName = 'Random')]
         [Parameter(ParameterSetName = 'Seed')]
         [Parameter(ParameterSetName = 'SuppliedWord')]
+        [Parameter(ParameterSetName = 'Help')]
+        [Parameter(ParameterSetName = 'Judge')]
         [string]$FirstWord,
 
-        [Parameter(ParameterSetName = 'Random')]
-        [Parameter(ParameterSetName = 'Seed')]
-        [Parameter(ParameterSetName = 'SuppliedWord')]
+        [Parameter(ParameterSetName = 'Help')]
         [switch]$Help,
+
+        [Parameter(ParameterSetName = 'Judge')]
+        [switch]$Judge,
 
         [Parameter(ParameterSetName = 'Random')]
         [Parameter(ParameterSetName = 'Seed')]
         [Parameter(ParameterSetName = 'SuppliedWord')]
+        [Parameter(ParameterSetName = 'Help')]
+        [Parameter(ParameterSetName = 'Judge')]
         [switch]$HardMode,
 
         [Parameter(ParameterSetName = 'Random')]
         [Parameter(ParameterSetName = 'Seed')]
         [Parameter(ParameterSetName = 'SuppliedWord')]
+        [Parameter(ParameterSetName = 'Help')]
+        [Parameter(ParameterSetName = 'Judge')]
         [ValidateScript({$_ -gt 0})] #Can't have fewer than 1 round in the game
         [int]$AllowedRounds = 6,
 
         [Parameter(ParameterSetName = 'Random')]
         [Parameter(ParameterSetName = 'Seed')]
         [Parameter(ParameterSetName = 'SuppliedWord')]
+        [Parameter(ParameterSetName = 'Help')]
+        [Parameter(ParameterSetName = 'Judge')]
         [ValidateSet("Black",
             "DarkBlue",
             "DarkGreen",
@@ -70,6 +87,8 @@
         [Parameter(ParameterSetName = 'Random')]
         [Parameter(ParameterSetName = 'Seed')]
         [Parameter(ParameterSetName = 'SuppliedWord')]
+        [Parameter(ParameterSetName = 'Help')]
+        [Parameter(ParameterSetName = 'Judge')]
         [ValidateSet("Black",
             "DarkBlue",
             "DarkGreen",
@@ -92,6 +111,8 @@
         [Parameter(ParameterSetName = 'Random')]
         [Parameter(ParameterSetName = 'Seed')]
         [Parameter(ParameterSetName = 'SuppliedWord')]
+        [Parameter(ParameterSetName = 'Help')]
+        [Parameter(ParameterSetName = 'Judge')]
         [ValidateSet("Black",
             "DarkBlue",
             "DarkGreen",
@@ -929,43 +950,52 @@ while (($CurrentRound -lt $ALLOWEDROUNDS) -and (-not($WonGame))){
             write-verbose $suggestedGuess
             $guess = $suggestedGuess
         }
-        if ($Help){
-            if ($SuggestedGuessOrder.count -gt 1){
-                Write-Output "There are $($suggestedGuessOrder.count) possible words remaining."
-                Write-Output "Ordered best guesses according to $algorithmtext`:`n"
-                foreach ($Guess in $suggestedGuessOrder){
-                    write-output $Guess
-                }
-            }
-            elseif ($SuggestedGuessOrder.count -eq 1){
-                Write-output "The only remaining word is`:"
-                $SuggestedGuessOrder
-            }
-            $guess = get-guess -HardMode
-            $found = $false
-            if ($guess -in $SuggestedGuessOrder){
+        if ($Help -or $Judge){
+            if ($Help){
                 if ($SuggestedGuessOrder.count -gt 1){
-                    $count = 0
-                    do{
-                        write-verbose "Guess Order Count [$count] WordToCheck $($suggestedGuessOrder[$count]) Guess [$guess]"
-                        if ($suggestedGuessOrder[$count] -eq $guess){
-                            $found = $TRUE
-                        }
-                        $count += 1
-                    }while (-not($found))
-                    Write-output "Your guess [$guess] was number [$count] in the possible word list."
+                    Write-Output "There are $($suggestedGuessOrder.count) possible words remaining."
+                    Write-Output "Ordered best guesses according to $algorithmtext`:`n"
+                    foreach ($Guess in $suggestedGuessOrder){
+                        write-output $Guess
+                    }
                 }
                 elseif ($SuggestedGuessOrder.count -eq 1){
-                    write-output "[$guess] was the only possible word."
+                    Write-output "The only remaining word is`:"
+                    $SuggestedGuessOrder
                 }
             }
-            else{
-                write-output "Guess [$guess] was not a possible guess. Turning off the helper."
-                $Help = $false
+            $guess = get-guess -HardMode
+            if ($Judge){
+                $found = $false
+                if ($guess -in $SuggestedGuessOrder){
+                    if ($SuggestedGuessOrder.count -gt 1){
+                        $count = 0
+                        do{
+                            write-verbose "Guess Order Count [$count] WordToCheck $($suggestedGuessOrder[$count]) Guess [$guess]"
+                            if ($suggestedGuessOrder[$count] -eq $guess){
+                                $found = $TRUE
+                            }
+                            $count += 1
+                        }while (-not($found))
+                        Write-output "Your guess [$guess] was number [$count/$($suggestedGuessOrder.count)] in the possible word list."
+                        Write-output "Better Words:"
+                        foreach ($Word in ($SuggestedGuessOrder| select-object -First $count)){
+                            write-output $word
+                        }
+                    }
+                    elseif ($SuggestedGuessOrder.count -eq 1){
+                        write-output "[$guess] was the only possible word."
+                    }
+                }
+            }
+            if (-Not($guess -in $SuggestedGuessOrder)){
+                write-output "Guess [$guess] was not a possible guess. Turning off the helper/judge."
+                $Judge = $false
                 $possiblewords = $NULL
                 $suggestedGuess = $NULL
                 $SuggestedGuessOrder = $NULL
             }
+            
         }
 
     }
@@ -993,7 +1023,7 @@ while (($CurrentRound -lt $ALLOWEDROUNDS) -and (-not($WonGame))){
         if (-not($Simulation) -and -not($Cheat)){
             Write-LettersLists -WordsArray $resultsArray
         }
-        If ($Cheat -or $Help){ #sometimes you want the computer to do the thinking
+        If ($Cheat -or $Help -or $Judge){ #sometimes you want the computer to do the thinking
             $possiblewords = $suggestedGuessOrder = $suggestedGuess = $NULL
             $regex = Get-GuessHelpRegex -WordsArray $resultsArray
             $possiblewords = Get-GuessHelpPossibleWords -Regex $regex
