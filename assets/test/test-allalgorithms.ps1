@@ -11,8 +11,6 @@ Param (
     [switch]$ObjOutput
 )
 
-$AlgorithmResults = @{}
-
 $algorithms = get-childitem $AlgorithmDirectory
 foreach ($word in $WordsToTest){
     foreach ($algorithm in $algorithms){

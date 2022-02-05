@@ -582,9 +582,11 @@ function Get-GuessHelpRegex {
         $ofs = ""
         write-verbose "Word to check: $($word.letter)"
         $lettersFoundThisRound = @()
+        $lettersFoundThisRoundExact = @()
         if (-not($pos0)){
             if ($word[0].FoundExact){
                 $pos0 = [char]$word[0].Letter
+                $lettersFoundThisRoundExact += $pos0
             }
             else{
                 if ($word[0].FoundContains){
@@ -604,9 +606,13 @@ function Get-GuessHelpRegex {
                 }
             }
         }
+        else{
+            $lettersFoundThisRoundExact += $pos0
+        }
         if (-not($pos1)){
             if ($word[1].FoundExact){
                 $pos1 = [char]$word[1].Letter
+                $lettersFoundThisRoundExact += $pos1
             }
             else{
                 if ($word[1].FoundContains){
@@ -628,9 +634,13 @@ function Get-GuessHelpRegex {
                 }
             }
         }
+        else{
+            $lettersFoundThisRoundExact += $pos1
+        }
         if (-not($pos2)){
             if ($word[2].FoundExact){
                 $pos2 = [char]$word[2].Letter
+                $lettersFoundThisRoundExact += $pos2
             }
             else{
                 if ($word[2].FoundContains){
@@ -652,9 +662,13 @@ function Get-GuessHelpRegex {
                 }
             }
         }
+        else{
+            $lettersFoundThisRoundExact += $pos2
+        }
         if (-not($pos3)){
             if ($word[3].FoundExact){
                 $pos3 = [char]$word[3].Letter
+                $lettersFoundThisRoundExact += $pos3
             }
             else{
                 if ($word[3].FoundContains){
@@ -676,9 +690,13 @@ function Get-GuessHelpRegex {
                 }
             }
         }
+        else{
+            $lettersFoundThisRoundExact += $pos3
+        }
         if (-not($pos4)){
             if ($word[4].FoundExact){
                 $pos4 = [char]$word[4].Letter
+                $lettersFoundThisRoundExact += $pos4
             }
             else{
                 if ($word[4].FoundContains){
@@ -701,6 +719,9 @@ function Get-GuessHelpRegex {
                 }
             }
         }
+        else{
+            $lettersFoundThisRoundExact += $pos4
+        }
         $ofs = ""
         $currentWord = "$($word.letter)"
         $lastWord = "$($WordsArray[-1].letter)"
@@ -709,15 +730,23 @@ function Get-GuessHelpRegex {
             write-verbose "Words equal each other"
             write-verbose "Found letters: $lettersFoundThisRound"
             $groupedFoundLetters = $lettersFoundThisRound | Group-Object
+
+            #add the exact matches of a letter to the yellow matches of a letter
+
+            $groupedFoundLettersExact = $lettersFoundThisRoundExact | Group-Object
+            write-verbose "Grouped found letters exact: $($groupedFoundLettersExact.name)"
             #write-output $groupedFoundLetters
             foreach ($letter in $groupedFoundLetters){
-                if ($letter.count -eq 4){
+                $FoundLettersCount = $groupedFoundLettersExact | where-object {$_.name -eq $Letter.name} | select-object -ExpandProperty count
+                $count = $letter.count + $FoundLettersCount
+                Write-verbose "Letter counts for regex purposes: $($letter.name) : Yellows count [$($letter.count)] : Greens count [$FoundLettersCount]"
+                if ($count -eq 4){
                     $quadrupledletters += $letter.name
                 }
-                elseif ($letter.count -eq 3){
+                elseif ($count -eq 3){
                     $tripledletters += $letter.name
                 }
-                elseif ($letter.count -eq 2){
+                elseif ($count -eq 2){
                     $doubledletters += $letter.name
                 }
                 else{
