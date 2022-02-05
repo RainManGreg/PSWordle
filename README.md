@@ -54,7 +54,7 @@ Choose the word you want to guess with `-WordToGuess`. This is useful for testin
 ### Word selection algorithm plugin
 An alternative version of wordle is `.\Start-Wordle-AlgInput.ps`. You can pass in a script that chooses the word to guess from a list of possible words with the `-AlgorithmPath` parameter. Include the path to the file in `-AlgorithmPath`.
 
-The script passed in requires a `-PossibleWords` parameter that is an array of words to choose one from and return a single word to be the guess. 
+The script passed in requires a `-PossibleWords` parameter that is an array of words to choose one from and return either a single word to be the guess or the ranked order of guesses. It will choose the word at the top of the list if a list is returned.
 
 ## Troubleshooting
 
