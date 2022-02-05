@@ -32,6 +32,11 @@
         [Parameter(ParameterSetName = 'Random')]
         [Parameter(ParameterSetName = 'Seed')]
         [Parameter(ParameterSetName = 'SuppliedWord')]
+        [switch]$Help,
+
+        [Parameter(ParameterSetName = 'Random')]
+        [Parameter(ParameterSetName = 'Seed')]
+        [Parameter(ParameterSetName = 'SuppliedWord')]
         [switch]$HardMode,
 
         [Parameter(ParameterSetName = 'Random')]
@@ -891,7 +896,9 @@ else{
         throw "Invalid word [$($WordToGuess.toupper())]. It is not in the dictionary"
     }
 }
-
+if ($psboundparameters.ContainsKey("AlgorithmFile")){
+    $AlgorithmText = "$(split-path $AlgorithmFile -leaf) "
+}
 #start playing the game
 $CurrentRound = 0
 $WonGame = $False
@@ -918,8 +925,48 @@ while (($CurrentRound -lt $ALLOWEDROUNDS) -and (-not($WonGame))){
         }
     }
     else {
-        write-verbose $suggestedGuess
-        $guess = $suggestedGuess
+        if ($Cheat){
+            write-verbose $suggestedGuess
+            $guess = $suggestedGuess
+        }
+        if ($Help){
+            if ($SuggestedGuessOrder.count -gt 1){
+                Write-Output "There are $($suggestedGuessOrder.count) possible words remaining."
+                Write-Output "Ordered best guesses according to $algorithmtext`:`n"
+                foreach ($Guess in $suggestedGuessOrder){
+                    write-output $Guess
+                }
+            }
+            elseif ($SuggestedGuessOrder.count -eq 1){
+                Write-output "The only remaining word is`:"
+                $SuggestedGuessOrder
+            }
+            $guess = get-guess -HardMode
+            $found = $false
+            if ($guess -in $SuggestedGuessOrder){
+                if ($SuggestedGuessOrder.count -gt 1){
+                    $count = 0
+                    do{
+                        write-verbose "Guess Order Count [$count] WordToCheck $($suggestedGuessOrder[$count]) Guess [$guess]"
+                        if ($suggestedGuessOrder[$count] -eq $guess){
+                            $found = $TRUE
+                        }
+                        $count += 1
+                    }while (-not($found))
+                    Write-output "Your guess [$guess] was number [$count] in the possible word list."
+                }
+                elseif ($SuggestedGuessOrder.count -eq 1){
+                    write-output "[$guess] was the only possible word."
+                }
+            }
+            else{
+                write-output "Guess [$guess] was not a possible guess. Turning off the helper."
+                $Help = $false
+                $possiblewords = $NULL
+                $suggestedGuess = $NULL
+                $SuggestedGuessOrder = $NULL
+            }
+        }
 
     }
     #clear-host
@@ -946,15 +993,12 @@ while (($CurrentRound -lt $ALLOWEDROUNDS) -and (-not($WonGame))){
         if (-not($Simulation) -and -not($Cheat)){
             Write-LettersLists -WordsArray $resultsArray
         }
-        If ($Cheat){ #sometimes you want the computer to do the thinking
+        If ($Cheat -or $Help){ #sometimes you want the computer to do the thinking
             $possiblewords = $suggestedGuessOrder = $suggestedGuess = $NULL
             $regex = Get-GuessHelpRegex -WordsArray $resultsArray
             $possiblewords = Get-GuessHelpPossibleWords -Regex $regex
             if (-not(test-path $AlgorithmFile)){
                 throw "Algorithm File not found. Ensure you're using the path to it from the current directory and not just the name of the file"
-            }
-            if ($psboundparameters.ContainsKey("Cheat")){
-                $AlgorithmText = "$(split-path $AlgorithmFile -leaf) "
             }
             if ($possiblewords){
                 if ($possiblewords.count -gt 1){  #only try to order them if there is more than one   
@@ -967,6 +1011,7 @@ while (($CurrentRound -lt $ALLOWEDROUNDS) -and (-not($WonGame))){
                 }
                 else { #if only one guess then guess it 
                     $suggestedGuess = $possiblewords
+                    $suggestedGuessOrder = $possiblewords
                 }
             }
             else{
@@ -974,6 +1019,7 @@ while (($CurrentRound -lt $ALLOWEDROUNDS) -and (-not($WonGame))){
             }
             
         }
+        
     }
 }
 
