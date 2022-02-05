@@ -16,7 +16,7 @@ foreach ($word in $WordsToTest){
     foreach ($algorithm in $algorithms){
         write-verbose $algorithm.fullname
         $name = $algorithm.Name
-        $results = & "$WordlePath" -WordToGuess $word -Cheat -Simulation -FirstWord $FirstWord -AlgorithmFile "$($algorithm.fullname)"
+        $results = & "$WordlePath" -WordToGuess $word -Cheat -Simulation -FirstWord $FirstWord -AlgorithmFile "$($algorithm.fullname)" -allowedrounds 100
         $prop = [ordered]@{
             "Algorithm" = $name
             "WordToGuess" = $Word
