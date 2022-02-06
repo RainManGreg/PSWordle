@@ -4,7 +4,8 @@
 [CmdletBinding()]
 Param (
     [Parameter(Mandatory=$True)]  
-    [string[]]$PossibleWords
+    [string[]]$PossibleWords,
+    [psobject[]]$WordsArray
 )
 
 $letterdict0 = @{}

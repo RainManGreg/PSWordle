@@ -2,17 +2,15 @@
     param(
         [Parameter(ParameterSetName = 'Seed')]
         [Parameter(ParameterSetName = 'Help')]
-        [Parameter(ParameterSetName = 'Judge')]
         [int]$Seed = (get-date).dayofyear + (get-date).year,
 
         [Parameter(ParameterSetName = 'Random')]
         [Parameter(ParameterSetName = 'Help')]
-        [Parameter(ParameterSetName = 'Judge')]
         [switch]$Random,
 
         [Parameter(ParameterSetName = 'SuppliedWord')]
         [Parameter(ParameterSetName = 'Help')]
-        [Parameter(ParameterSetName = 'Judge')]
+        [Parameter(ParameterSetName = 'Judge',Mandatory = $True)]
         [string]$WordToGuess,
 
         [Parameter(ParameterSetName = 'Random')]
@@ -36,7 +34,6 @@
         [Parameter(ParameterSetName = 'Seed')]
         [Parameter(ParameterSetName = 'SuppliedWord')]
         [Parameter(ParameterSetName = 'Help')]
-        [Parameter(ParameterSetName = 'Judge')]
         [string]$FirstWord,
 
         [Parameter(ParameterSetName = 'Help')]
@@ -888,14 +885,87 @@ function Get-GuessHelpPossibleWords {
     [CmdletBinding()]
     Param (
         [Parameter(Mandatory=$True)]  
-        [string]$Regex
+        [string]$Regex,
+        [string[]]$Dictionary
     )
 
-    $Dictionary = Get-Dictionary 
+    if (-not($psboundparameters.ContainsKey($Dictionary))){
+        $Dictionary = Get-Dictionary 
+    }
     $PossibleWords = $Dictionary | select-string -Pattern $Regex
     $ofs = " "
     write-verbose "Possible words: $PossibleWords"
     $PossibleWords
+}
+
+function Judge-Guess {
+    [CmdletBinding()]
+    Param (
+        [Parameter(Mandatory=$True)]  
+        [string]$Guess,
+        [Parameter(Mandatory=$True)]  
+        [string[]]$SuggestedGuessOrder,
+        [Parameter(Mandatory=$True)]  
+        [int]$Round
+    )
+    $found = $false       
+    if ($guess -in $SuggestedGuessOrder){
+        if ($SuggestedGuessOrder.count -gt 1){
+            $count = 0
+            do{
+                write-verbose "Guess Order Count [$count] WordToCheck $($suggestedGuessOrder[$count]) Guess [$guess]"
+                if ($suggestedGuessOrder[$count] -eq $guess){
+                    $found = $TRUE
+                }
+                $count += 1
+            }while (-not($found))
+            Write-host "`nYour guess [$guess] was number [$count/$($suggestedGuessOrder.count)] in the possible word list."
+            if ($count -lt 20){
+                Write-host "Better Words:"
+                foreach ($Word in ($SuggestedGuessOrder| select-object -First ($count-1))){
+                    write-host $word
+                }
+            }
+            else {
+                Write-host "Top 20 better Words:"
+                foreach ($Word in ($SuggestedGuessOrder | select-object -First 20)){
+                    write-host $word
+                }
+            }
+        }
+        elseif ($SuggestedGuessOrder.count -eq 1){
+            write-host "`n[$guess] was the only possible word."
+        }
+    }
+}
+
+function Get-GuessHelp {
+    [CmdletBinding()]
+    Param (
+        [Parameter(Mandatory=$True)]  
+        [string[]]$SuggestedGuessOrder,
+        [Parameter(Mandatory=$True)]  
+        [string]$AlgorithmName
+    )
+    if ($SuggestedGuessOrder.count -gt 1){
+        Write-host "`nThere are $($suggestedGuessOrder.count) possible words remaining."
+        if ($SuggestedGuessOrder.count -le 20){
+            Write-host "Ordered best guesses according to $AlgorithmName`:`n"
+            foreach ($Guess in $suggestedGuessOrder){
+                write-host $Guess
+            }
+        }
+        else{
+            Write-host "Top 20 best guesses according to $AlgorithmName`:`n"
+            foreach ($Guess in ($suggestedGuessOrder | select-object -first 20)){
+                write-host $Guess
+            }
+        }
+    }
+    elseif ($SuggestedGuessOrder.count -eq 1){
+        Write-host "`nThe only remaining word is`:"
+        write-host $SuggestedGuessOrder
+    }
 }
 
 #Initialize game - get word
@@ -927,6 +997,7 @@ if ($psboundparameters.ContainsKey("AlgorithmFile")){
 $CurrentRound = 0
 $WonGame = $False
 $resultsArray = @()
+$Dictionary = Get-Dictionary
 if (-not($Simulation) -and -not($Cheat) -and -not ($Judge)){
     Write-GameInstructions
 }
@@ -955,61 +1026,42 @@ while (($CurrentRound -lt $ALLOWEDROUNDS) -and (-not($WonGame))){
         }
         if ($Help -or $Judge){
             if ($Help){
-                if ($SuggestedGuessOrder.count -gt 1){
-                    Write-Output "There are $($suggestedGuessOrder.count) possible words remaining."
-                    Write-Output "Ordered best guesses according to $algorithmtext`:`n"
-                    foreach ($Guess in $suggestedGuessOrder){
-                        write-output $Guess
-                    }
-                }
-                elseif ($SuggestedGuessOrder.count -eq 1){
-                    Write-output "The only remaining word is`:"
-                    $SuggestedGuessOrder
-                }
+                Get-GuessHelp -SuggestedGuessOrder $suggestedGuessOrder -AlgorithmName $AlgorithmText
                 $guess = get-guess -HardMode
             }
             
             if ($Judge){
-                $found = $false
-                $guess = $WordsGuessed[$CurrentRound-1].toupper()#because round was already incremented
+                $guess = $WordsGuessed[$CurrentRound-1]#because round was already incremented
                 if($CurrentRound -eq 1){ #Need To Build $SuggestedGuessOrder for first round
-                    $suggestedGuessOrder = & $AlgorithmFile -PossibleWords $Dict
+                    $suggestedGuessOrder = & $AlgorithmFile -PossibleWords $Dict -WordsArray $dict
                 }
-                if ($guess -in $SuggestedGuessOrder){
-                    if ($SuggestedGuessOrder.count -gt 1){
-                        $count = 0
-                        do{
-                            write-verbose "Guess Order Count [$count] WordToCheck $($suggestedGuessOrder[$count]) Guess [$guess]"
-                            if ($suggestedGuessOrder[$count] -eq $guess){
-                                $found = $TRUE
-                            }
-                            $count += 1
-                        }while (-not($found))
-                        Write-output "Your guess [$guess] was number [$count/$($suggestedGuessOrder.count)] in the possible word list."
-                        if ($count -lt 20){
-                            Write-output "Better Words:"
-                            foreach ($Word in ($SuggestedGuessOrder| select-object -First ($count-1))){
-                                write-output $word
-                            }
-                        }
-                        else {
-                            Write-Output "Top 20 better Words:"
-                            foreach ($Word in ($SuggestedGuessOrder | select-object -First 20)){
-                                write-output $word
-                            }
-                        }
-                    }
-                    elseif ($SuggestedGuessOrder.count -eq 1){
-                        write-output "[$guess] was the only possible word."
-                    }
+                if (-not($guess)){
+                    throw "Invalid word to guess or incomplete list of guesses supplied"
+                }
+                $guess = $guess.toupper()
+                Judge-Guess -Guess $guess -SuggestedGuessOrder $SuggestedGuessOrder -Round ($CurrentRound-1)
+            }
+            if ($SuggestedGuessOrder.count -gt 1){
+                if (-Not($guess -in $SuggestedGuessOrder)){
+                    write-verbose "Suggested Guess Order : $SuggestedGuessOrder"
+                    write-host "Guess [$guess] was not a possible guess. Turning off the helper/judge."
+                    $Judge = $false
+                    $Help = $False
+                    $possiblewords = $NULL
+                    $suggestedGuess = $NULL
+                    $SuggestedGuessOrder = $NULL
                 }
             }
-            if (-Not($guess -in $SuggestedGuessOrder)){
-                write-output "Guess [$guess] was not a possible guess. Turning off the helper/judge."
-                $Judge = $false
-                $possiblewords = $NULL
-                $suggestedGuess = $NULL
-                $SuggestedGuessOrder = $NULL
+            elseif ($SuggestedGuessOrder.count -eq 1) {
+                if ($guess -ne $suggestedGuessOrder){
+                    write-verbose "Suggested Guess Order : $SuggestedGuessOrder"
+                    write-host "Guess [$guess] was not a possible guess. Turning off the helper/judge."
+                    $Judge = $false
+                    $Help = $False
+                    $possiblewords = $NULL
+                    $suggestedGuess = $NULL
+                    $SuggestedGuessOrder = $NULL
+                }
             }
             
         }
@@ -1042,14 +1094,17 @@ while (($CurrentRound -lt $ALLOWEDROUNDS) -and (-not($WonGame))){
         If ($Cheat -or $Help -or $Judge){ #sometimes you want the computer to do the thinking
             $possiblewords = $suggestedGuessOrder = $suggestedGuess = $NULL
             $regex = Get-GuessHelpRegex -WordsArray $resultsArray
-            $possiblewords = Get-GuessHelpPossibleWords -Regex $regex
-            if (-not(test-path $AlgorithmFile)){
-                throw "Algorithm File not found. Ensure you're using the path to it from the current directory and not just the name of the file"
+            $possiblewords = Get-GuessHelpPossibleWords -Regex $regex -Dictionary $Dictionary
+            if ($psboundparameters.containskey("AlgorithmFile")){
+                if (-not(test-path $AlgorithmFile)){
+                    throw "Algorithm File not found. Ensure you're using the path to it from the current directory and not just the name of the file"
+                }
             }
             if ($possiblewords){
                 if ($possiblewords.count -gt 1){  #only try to order them if there is more than one   
-                    $suggestedGuessOrder = & $AlgorithmFile -PossibleWords $possiblewords
-                
+                    
+                    $suggestedGuessOrder = & $AlgorithmFile -PossibleWords $possiblewords -WordsArray $resultsArray
+                    
                     if ($suggestedGuessOrder.count -gt 1){
                         $suggestedGuess = $suggestedGuessOrder[0]
                     }
@@ -1094,25 +1149,24 @@ foreach ($round in $resultsArray){
         Write-FormattedWord -word $round -Hidden
     }
 }
-if ($Simulation){
-    $guessedWords = foreach ($word in $resultsArray){
-        $ofs = ""
-        "$($word.letter)"
-    } 
-    if ($psboundparameters.containskey('Seed')){
-        $properties = @{
-            'Word' = $WordToGuess;
-            'Score' = $returnScore;
-            'GuessedWords' = $guessedWords;
-            'Seed' = $seed
-        }
-    }
-    else{
-        $properties = @{
-            'Word' = $WordToGuess;
-            'Score' = $returnScore;
-            'GuessedWords' = $guessedWords
-        }
-    }
-    New-Object -TypeName PSObject -Prop $properties
+$guessedWords = foreach ($word in $resultsArray){
+    $ofs = ""
+    "$($word.letter)"
 }
+if ($psboundparameters.containskey('Seed')){
+    $properties = @{
+        'Word' = $WordToGuess.toupper();
+        'Score' = $returnScore;
+        'GuessedWords' = $guessedWords;
+        'Seed' = $seed
+    }
+}
+else{
+    $properties = @{
+        'Word' = $WordToGuess.toupper();
+        'Score' = $returnScore;
+        'GuessedWords' = $guessedWords
+    }
+}
+New-Object -TypeName PSObject -Prop $properties
+
