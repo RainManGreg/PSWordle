@@ -55,10 +55,10 @@ Choose the word you want to guess with `-WordToGuess`. This is useful for testin
 An alternative version of wordle is `.\Start-Wordle-AlgInput.ps`. You can pass in a script that chooses the word to guess from a list of possible words with the `-AlgorithmPath` parameter. Include the path to the file in `-AlgorithmPath`.
 
 The script passed in requires a `-PossibleWords` parameter that is an array of words to choose one from and return a single word to be the guess. It also requires the input of a `-WordsArray` parameter, which is an array of PSObjects. Each PSObject in the array represents the results of a guessed word (each letter and whether it was green, yellow, or gray). Each PSObject has the following properties to do this:
-`Letter` : the letter that was guessed
-`Position` : the position of the letter in the word (0-5)
-`FoundExact` : $True if the letter and position match the word to guess. $False otherwise.
-`FoundContains` : $True if the letter is in the word to guess but the position is incorrect. $False otherwise.
+- `Letter` : the letter that was guessed
+- `Position` : the position of the letter in the word (0-5)
+- `FoundExact` : $True if the letter and position match the word to guess. $False otherwise.
+- `FoundContains` : $True if the letter is in the word to guess but the position is incorrect. $False otherwise.
 
 ## Play the game with help
 
